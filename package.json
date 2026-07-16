@@ -2,16 +2,20 @@
   "name": "marimo-live",
   "description": "Render marimo notebooks inline on GitHub instead of raw Python source.",
   "private": true,
+  "packageManager": "pnpm@10.32.1",
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "wxt",
-    "dev:firefox": "wxt -b firefox",
-    "build": "wxt build",
-    "build:firefox": "wxt build -b firefox",
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "compile": "turbo run compile",
+    "lint": "turbo run lint",
+    "build:prototype": "wxt build",
+    "build:prototype:firefox": "wxt build -b firefox",
+    "dev:prototype": "wxt",
+    "dev:prototype:firefox": "wxt -b firefox",
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
-    "compile": "tsc --noEmit",
     "postinstall": "wxt prepare"
   },
   "dependencies": {
@@ -23,6 +27,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@wxt-dev/module-react": "^1.1.5",
+    "turbo": "^2.6.3",
     "typescript": "^5.9.3",
     "wxt": "^0.20.27"
   },
