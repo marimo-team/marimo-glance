@@ -21,6 +21,6 @@
     "@marimo/host-gitlab": "workspace:*"
   },
   "devDependencies": {
-    "wxt": "^0.20.27"
+    "wxt": "0.20.27"
   }
 }
