@@ -4,7 +4,6 @@ export { playgroundUrl, renderNotebookAsIframe } from "./render.js";
 
 export type {
 	Host,
-	HostAnchor,
 	PlaygroundOptions,
 	RenderOptions,
 	Theme,

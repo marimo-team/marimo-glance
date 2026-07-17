@@ -1,12 +1,8 @@
-import type { Host, HostAnchor } from "@marimo/notebook-core";
-import {
-	isMarimoNotebook,
-	renderNotebookAsIframe,
-} from "@marimo/notebook-core";
-import { guardCsp } from "./csp.js";
+import type { Host, Theme } from "@marimo/notebook-core";
+import { isMarimoNotebook } from "@marimo/notebook-core";
+import { createNotebookView } from "./notebook-view.js";
+import { installSwitcher, type Switcher, savedView } from "./switcher.js";
 import { resolveTheme } from "./theme.js";
-import { installToggle } from "./toggle.js";
-import { fitToViewport } from "./viewport.js";
 
 export interface RuntimeOptions {
 	/** Provenance tag forwarded to the playground URL as `ref`. */
@@ -78,20 +74,16 @@ export function createRuntime(
 		const source = await host.getSource(url);
 
 		// The page may have navigated, torn down, or been stopped while awaiting.
-		const fresh = host.findAnchor();
-		if (disposed || new URL(window.location.href).pathname !== key || !fresh) {
+		const code = host.findAnchor();
+		if (disposed || new URL(window.location.href).pathname !== key || !code) {
 			handledKey = null;
 			return;
 		}
 		if (source === null || !isMarimoNotebook(source)) return;
 
-		const notebook = renderNotebookAsIframe(source, {
-			ref: options.ref,
-			theme: resolveTheme(host),
-		});
 		teardown?.();
-		teardown = mount(notebook, fresh, options.loadTimeoutMs);
-		injectedAgainst = fresh.mount;
+		teardown = inject(code, source, resolveTheme(host), options);
+		injectedAgainst = code;
 	}
 
 	function trigger(): void {
@@ -122,29 +114,30 @@ export function createRuntime(
 }
 
 /**
- * Insert the notebook before the host's code element, wire up the toggle,
- * viewport fitting, and CSP fallback, and return a teardown that fully reverses
- * the injection and restores the original code element.
+ * Wire the lazy notebook view to the floating switcher and return a teardown
+ * that removes both and restores the original code element. The switcher starts
+ * in the persisted view (original by default, so the notebook is opt-in) and
+ * handles the CSP fallback for the view it drives.
  */
-function mount(
-	notebook: HTMLElement,
-	anchor: HostAnchor,
-	loadTimeoutMs?: number,
+function inject(
+	code: HTMLElement,
+	source: string,
+	theme: Theme,
+	options: RuntimeOptions,
 ): () => void {
-	anchor.mount.before(notebook);
-	const stopFit = fitToViewport(notebook);
-	const toggle = installToggle(notebook, anchor);
-	const stopCsp = guardCsp(
-		notebook,
-		() => toggle.show("original"),
-		loadTimeoutMs,
-	);
+	let switcher: Switcher;
+	const view = createNotebookView({
+		code,
+		source,
+		theme,
+		ref: options.ref,
+		loadTimeoutMs: options.loadTimeoutMs,
+		onBlocked: () => switcher.handleBlocked(),
+	});
+	switcher = installSwitcher({ view, initialView: savedView() });
 
 	return () => {
-		stopCsp();
-		toggle.dispose();
-		stopFit();
-		notebook.remove();
-		anchor.mount.style.display = "";
+		switcher.dispose();
+		view.dispose();
 	};
 }

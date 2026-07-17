@@ -33,17 +33,16 @@ export function installDom(
 }
 
 /**
- * Build the DOM a well-formed host page exposes: a code element to replace and
- * a toolbar to host the toggle. Returns the two anchor elements.
+ * Build the DOM a well-formed host page exposes: the original code element the
+ * runtime replaces. The floating switcher mounts to `body`, so no toolbar is
+ * needed. Returns the code element.
  */
 export function seedCodePage() {
 	const code = globalThis.document.createElement("section");
 	code.id = "code";
 	code.textContent = "original source";
-	const toolbar = globalThis.document.createElement("div");
-	toolbar.id = "toolbar";
-	globalThis.document.body.append(toolbar, code);
-	return { code, toolbar };
+	globalThis.document.body.append(code);
+	return { code };
 }
 
 /** A minimal Host stub whose behaviour each test tunes via overrides. */
@@ -52,11 +51,7 @@ export function makeHost(overrides = {}) {
 		id: "test",
 		matches: (url) => url.pathname.endsWith(".py"),
 		getSource: async () => "import marimo\n\napp = marimo.App()\n",
-		findAnchor: () => {
-			const code = globalThis.document.querySelector("#code");
-			const toggleContainer = globalThis.document.querySelector("#toolbar");
-			return code && toggleContainer ? { mount: code, toggleContainer } : null;
-		},
+		findAnchor: () => globalThis.document.querySelector("#code"),
 		...overrides,
 	};
 }
