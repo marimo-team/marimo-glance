@@ -26,6 +26,9 @@ importers:
       '@marimo/host-github':
         specifier: workspace:*
         version: link:../../packages/host-github
+      '@marimo/host-gitlab':
+        specifier: workspace:*
+        version: link:../../packages/host-gitlab
     devDependencies:
       wxt:
         specifier: ^0.20.27
@@ -51,7 +54,15 @@ importers:
         specifier: ^25.0.1
         version: 25.0.1
 
-  packages/host-gitlab: {}
+  packages/host-gitlab:
+    dependencies:
+      '@marimo/notebook-core':
+        specifier: workspace:*
+        version: link:../notebook-core
+    devDependencies:
+      jsdom:
+        specifier: ^25.0.1
+        version: 25.0.1
 
   packages/notebook-core:
     dependencies:

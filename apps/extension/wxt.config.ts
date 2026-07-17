@@ -12,6 +12,7 @@ export default defineConfig({
 			"*://gist.github.com/*",
 			"*://raw.githubusercontent.com/*",
 			"*://gist.githubusercontent.com/*",
+			"*://gitlab.com/*",
 		],
 	},
 });

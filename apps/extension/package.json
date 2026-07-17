@@ -17,7 +17,8 @@
   },
   "dependencies": {
     "@marimo/extension-runtime": "workspace:*",
-    "@marimo/host-github": "workspace:*"
+    "@marimo/host-github": "workspace:*",
+    "@marimo/host-gitlab": "workspace:*"
   },
   "devDependencies": {
     "wxt": "^0.20.27"
