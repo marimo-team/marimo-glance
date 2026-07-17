@@ -1,0 +1,25 @@
+{
+  "name": "@marimo/extension",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "compile": "wxt prepare && tsc --noEmit",
+    "lint": "oxlint entrypoints",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox",
+    "clean": "rm -rf output .wxt",
+    "postinstall": "wxt prepare"
+  },
+  "dependencies": {
+    "@marimo/extension-runtime": "workspace:*",
+    "@marimo/host-github": "workspace:*"
+  },
+  "devDependencies": {
+    "wxt": "^0.20.27"
+  }
+}
