@@ -27,6 +27,13 @@ test('recognizes an aliased marimo import', () => {
   assert.equal(isMarimoNotebook(source), true);
 });
 
+test('recognizes the standard notebook with an in-cell aliased import', () => {
+  const source =
+    'import marimo\n\napp = marimo.App()\n\n\n@app.cell\ndef _():\n    import marimo as mo\n    return (mo,)\n';
+
+  assert.equal(isMarimoNotebook(source), true);
+});
+
 test('rejects Python that is not a marimo notebook', () => {
   const source = 'def greet(name: str) -> str:\n    return f"Hello, {name}"\n';
 

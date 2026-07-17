@@ -5,7 +5,11 @@ export function isPythonPath(path: string): boolean {
 }
 
 export function isMarimoNotebook(source: string): boolean {
-	const import_marimo_as_regex = /^\s*import\s+marimo\s+as\s+(\w+)/m;
+	// Anchor to the true line start (no leading whitespace) so an indented
+	// `import marimo as mo` inside a cell body does not hijack the alias — a
+	// notebook's top-level `import marimo` plus an in-cell aliased import is the
+	// standard shape, and the app is declared with the top-level binding.
+	const import_marimo_as_regex = /^import\s+marimo\s+as\s+(\w+)/m;
 
 	const result = source.match(import_marimo_as_regex);
 
