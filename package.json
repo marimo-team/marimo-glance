@@ -10,6 +10,8 @@
     "dev": "turbo run dev --parallel",
     "compile": "turbo run compile",
     "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean": "turbo run clean",
     "build:prototype": "wxt build",
     "build:prototype:firefox": "wxt build -b firefox",
     "dev:prototype": "wxt",
@@ -27,6 +29,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@wxt-dev/module-react": "^1.1.5",
+    "oxlint": "^1.74.0",
     "turbo": "^2.6.3",
     "typescript": "^5.9.3",
     "wxt": "^0.20.27"
