@@ -9,13 +9,13 @@ importers:
   .:
     devDependencies:
       oxlint:
-        specifier: ^1.74.0
+        specifier: 1.74.0
         version: 1.74.0
       turbo:
-        specifier: ^2.6.3
+        specifier: 2.10.5
         version: 2.10.5
       typescript:
-        specifier: ^7.0.0
+        specifier: 7.0.2
         version: 7.0.2
 
   apps/extension:
@@ -31,7 +31,7 @@ importers:
         version: link:../../packages/host-gitlab
     devDependencies:
       wxt:
-        specifier: ^0.20.27
+        specifier: 0.20.27
         version: 0.20.27(@types/node@26.1.1)(jiti@2.7.0)(rolldown@1.1.5)
 
   packages/extension-runtime:
@@ -41,7 +41,7 @@ importers:
         version: link:../notebook-core
     devDependencies:
       jsdom:
-        specifier: ^29.0.0
+        specifier: 29.1.1
         version: 29.1.1
 
   packages/host-github:
@@ -51,7 +51,7 @@ importers:
         version: link:../notebook-core
     devDependencies:
       jsdom:
-        specifier: ^29.0.0
+        specifier: 29.1.1
         version: 29.1.1
 
   packages/host-gitlab:
@@ -61,7 +61,7 @@ importers:
         version: link:../notebook-core
     devDependencies:
       jsdom:
-        specifier: ^29.0.0
+        specifier: 29.1.1
         version: 29.1.1
 
   packages/notebook-core:
