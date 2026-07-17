@@ -1,47 +1,62 @@
 # marimo live
 
-Browser extension that renders [marimo](https://marimo.io) notebooks as live
-WASM notebooks inline on sites that show their `.py` source (GitHub today),
-instead of the raw Python.
+See a [marimo](https://marimo.io) notebook on GitHub? Run it right there, in the page, without cloning anything.
 
-marimo notebooks are plain `.py` files, so on GitHub they display as source
-code. This extension detects a marimo notebook in the blob view and renders it
-in place.
+marimo notebooks are just Python files, so GitHub and gists show them as source code. This extension spots a notebook, drops a little **"Switch to interactive notebook"** pill on the page, and when you click it the notebook boots up live (via [marimo.app](https://marimo.app), running in WebAssembly) right where the code was. Your original view is one click away, and flipping between the two never restarts the notebook.
 
-## Architecture
+Nothing happens until you ask for it. No auto-replacing your code, no surprises.
 
-The rendering core lives in `lib/marimo/` and has **no framework dependency** —
-plain TypeScript that operates on source strings and DOM nodes. React is used
-only for the extension's popup/options UI. This split keeps the core portable:
-it could back a [refined-github](https://github.com/refined-github/refined-github)
-feature (which mounts plain DOM, not React) without rewriting the rendering
-logic.
+## Demo
 
-- `lib/marimo/detect.ts` — recognise a marimo notebook from its source
-- `lib/marimo/render.ts` — turn notebook source into a DOM subtree
-- `entrypoints/content.ts` — GitHub content script: detect, read source, mount
-- `entrypoints/popup/` — React popup UI
+<div align="center">
+  <video src="https://github.com/user-attachments/assets/16a850fc-97a3-4a1e-a077-65621f417bde" width="600" controls></video>
+</div>
 
-Built with [WXT](https://wxt.dev).
+## What's in here
 
-## Development
+It's a pnpm + [Turborepo](https://turbo.build) monorepo. The rendering logic is kept separate from the browser extension itself, so the interesting parts stay reusable if someone wants to drop them into another tool someday.
+
+
+| Package                     | What it does                                                                                                               |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `@marimo/notebook-core`     | The portable core: detect a marimo notebook, build the playground URL, render the iframe. Knows nothing about any website. |
+| `@marimo/extension-runtime` | Watches the page and puts up the opt-in switcher. Mounts the notebook, cleans it up, survives GitHub's soft navigations.   |
+| `@marimo/host-github`       | Teaches the runtime about `github.com` blobs and `gist.github.com`.                                                        |
+| `@marimo/host-gitlab`       | A placeholder for GitLab support. Not built yet.                                                                           |
+| `apps/extension`            | The actual [WXT](https://wxt.dev) extension for Chrome and Firefox. It just wires a host to the runtime.                   |
+
+
+Supporting a new site means writing a small "host" that answers four questions (does this URL match, what's the source, where's the code element on the page, and optionally what's the page theme). The runtime does the rest, so you never have to touch it to add a site.
+
+## Getting started
 
 ```bash
 pnpm install
-pnpm dev            # launch Chrome with the extension loaded, HMR enabled
-pnpm dev:firefox    # same, for Firefox
+pnpm dev            # watch-build every package in parallel
 ```
 
-## Build
+To actually try the extension in a browser with live reload:
 
 ```bash
-pnpm compile        # typecheck
-pnpm build          # production build to .output/chrome-mv3
-pnpm zip            # packaged zip for store upload
+pnpm --filter @marimo/extension dev           # Chrome
+pnpm --filter @marimo/extension dev:firefox   # Firefox
 ```
 
-## Status
 
-Detection and content-script mounting are wired up; the actual notebook
-rendering in `lib/marimo/render.ts` is a placeholder pending the real
-implementation.
+
+## Building and checking
+
+```bash
+pnpm build          # build everything; the extension ends up in apps/extension/output/
+pnpm compile        # typecheck
+pnpm lint           # oxlint
+pnpm test           # run the tests
+```
+
+Finished builds land in `apps/extension/output/chrome-mv3` and `apps/extension/output/firefox-mv2`, ready to load unpacked. When it's time to ship, `pnpm --filter @marimo/extension zip` packages a store upload (`zip:firefox` for Firefox Add-ons).
+
+## Contributing
+
+Issues and PRs are welcome. Each package has its own README explaining what it's for and where its boundaries are, which is the fastest way to find where a change belongs.
+
+One local quirk worth knowing: if you're on a setup where `pnpm` runs inside a restricted sandbox, it may fail on an `fnm` symlink permission error. Run `pnpm` with the sandbox off. Plain `tsc` and `node` are fine either way.

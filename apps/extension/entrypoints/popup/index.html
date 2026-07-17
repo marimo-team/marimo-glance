@@ -55,15 +55,32 @@
       }
       .how {
         margin-top: 12px;
-        padding: 10px 12px;
+        padding: 10px 12px 10px 14px;
         border: 1px solid var(--border);
         border-radius: 8px;
+      }
+      .how h2 {
+        margin: 0 0 6px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+      }
+      .how ol {
+        margin: 0;
+        padding-left: 18px;
+      }
+      .how li {
+        margin: 4px 0;
       }
       .how strong {
         color: var(--accent);
         font-weight: 600;
       }
       footer {
+        display: flex;
+        gap: 14px;
         margin-top: 14px;
         padding-top: 12px;
         border-top: 1px solid var(--border);
@@ -86,13 +103,20 @@
       Renders marimo notebooks inline on GitHub and gists instead of raw Python
       source.
     </p>
-    <p class="how">
-      Open a marimo <code>.py</code> on GitHub, then click
-      <strong>Switch to interactive notebook</strong> to run it in your browser.
-    </p>
+    <div class="how">
+      <h2>How to use</h2>
+      <ol>
+        <li>Open a marimo <code>.py</code> notebook on GitHub or a gist.</li>
+        <li>Click the <strong>Switch to interactive notebook</strong> pill that appears.</li>
+        <li>Run and edit it in your browser; click <strong>See original</strong> to return to the source.</li>
+      </ol>
+    </div>
     <footer>
       <a href="https://github.com/marimo-team/marimo-live" target="_blank" rel="noreferrer">
-        github.com/marimo-team/marimo-live
+        Source code
+      </a>
+      <a href="https://github.com/marimo-team/marimo-live/issues" target="_blank" rel="noreferrer">
+        Report an issue
       </a>
     </footer>
   </body>

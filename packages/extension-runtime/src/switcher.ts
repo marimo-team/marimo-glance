@@ -1,5 +1,5 @@
-import { className, EXT_CSS_CLASS_PREFIX } from "@marimo/notebook-core";
 import type { View } from "@marimo/notebook-core";
+import { className, EXT_CSS_CLASS_PREFIX } from "@marimo/notebook-core";
 import type { NotebookView } from "./notebook-view.js";
 
 const VIEW_STORAGE_KEY = "mv-view";
@@ -53,7 +53,8 @@ export function installSwitcher(options: SwitcherOptions): Switcher {
 	hint.className = className("switcher__hint");
 	hint.textContent = "marimo notebook detected · runs in your browser (WASM)";
 
-	root.append(button, hint);
+	root.append(hint);
+	root.append(button);
 	document.body.append(root);
 
 	let mode: Mode = "prompt";
@@ -66,7 +67,7 @@ export function installSwitcher(options: SwitcherOptions): Switcher {
 				? "See original"
 				: mode === "blocked"
 					? "Couldn't load — blocked by this site"
-					: "Switch to interactive notebook";
+					: "Switch to interactive marimo notebook";
 	};
 
 	const setExpanded = (expanded: boolean) => {
@@ -74,7 +75,8 @@ export function installSwitcher(options: SwitcherOptions): Switcher {
 		button.setAttribute("aria-expanded", String(expanded));
 	};
 
-	const persist = (view: View) => sessionStorage.setItem(VIEW_STORAGE_KEY, view);
+	const persist = (view: View) =>
+		sessionStorage.setItem(VIEW_STORAGE_KEY, view);
 
 	const activate = () => {
 		mode = "active";
