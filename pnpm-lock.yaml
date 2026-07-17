@@ -52,7 +52,15 @@ importers:
         specifier: ^25.0.1
         version: 25.0.1
 
-  packages/host-github: {}
+  packages/host-github:
+    dependencies:
+      '@marimo/notebook-core':
+        specifier: workspace:*
+        version: link:../notebook-core
+    devDependencies:
+      jsdom:
+        specifier: ^25.0.1
+        version: 25.0.1
 
   packages/host-gitlab: {}
 

@@ -8,6 +8,13 @@
     "dev": "tsc --watch -p tsconfig.json",
     "compile": "tsc --noEmit -p tsconfig.json",
     "lint": "oxlint src",
+    "test": "node --test test/*.test.mjs",
     "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@marimo/notebook-core": "workspace:*"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.1"
   }
 }
