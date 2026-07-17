@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 output
+.output
 .turbo
 stats.html
 stats-*.json

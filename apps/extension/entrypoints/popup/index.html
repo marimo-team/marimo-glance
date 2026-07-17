@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>marimo live</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #ffffff;
+        --fg: #1b1b1f;
+        --muted: #6b6b76;
+        --accent: #1b7f7a;
+        --border: #e5e5ea;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #1b1b1f;
+          --fg: #ececf0;
+          --muted: #9a9aa5;
+          --accent: #3fbdb5;
+          --border: #33333a;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        width: 300px;
+        margin: 0;
+        padding: 16px;
+        font: 13px/1.5 system-ui, -apple-system, sans-serif;
+        color: var(--fg);
+        background: var(--bg);
+      }
+      .head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .head img {
+        width: 32px;
+        height: 32px;
+      }
+      .head h1 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 600;
+      }
+      p {
+        margin: 12px 0 0;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .how {
+        margin-top: 12px;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+      }
+      .how strong {
+        color: var(--accent);
+        font-weight: 600;
+      }
+      footer {
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border);
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="head">
+      <img src="/icon/marimo.png" alt="marimo logo" />
+      <h1>marimo live</h1>
+    </div>
+    <p class="muted">
+      Renders marimo notebooks inline on GitHub and gists instead of raw Python
+      source.
+    </p>
+    <p class="how">
+      Open a marimo <code>.py</code> on GitHub, then click
+      <strong>Switch to interactive notebook</strong> to run it in your browser.
+    </p>
+    <footer>
+      <a href="https://github.com/marimo-team/marimo-live" target="_blank" rel="noreferrer">
+        github.com/marimo-team/marimo-live
+      </a>
+    </footer>
+  </body>
+</html>
