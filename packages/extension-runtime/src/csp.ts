@@ -34,7 +34,7 @@ export function guardCsp(
 		cleanup();
 		if (blockedReason) {
 			console.warn(
-				`[marimo-live] playground iframe ${blockedReason}; restoring original view`,
+				`[marimo-glance] playground iframe ${blockedReason}; restoring original view`,
 			);
 			restore();
 		}

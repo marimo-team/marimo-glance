@@ -4,9 +4,9 @@ import { defineConfig } from "wxt";
 export default defineConfig({
 	outDir: "output",
 	manifest: {
-		name: "marimo live",
+		name: "Marimo Glance",
 		description:
-			"Render marimo notebooks inline on GitHub and gists instead of raw Python source.",
+			"See marimo notebooks at a glance: run them live, inline on GitHub and gists.",
 		host_permissions: [
 			"*://github.com/*",
 			"*://gist.github.com/*",

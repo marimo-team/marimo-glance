@@ -30,7 +30,7 @@ test("on detection it stays on the original code and floats an opt-in pill", asy
 	assert.equal(code.style.display, "", "original code is left visible");
 	assert.equal(iframes().length, 0, "no iframe is mounted until the user opts in");
 	assert.ok(pill(), "a floating switcher is shown");
-	assert.match(label(), /interactive notebook/i);
+	assert.match(label(), /interactive marimo notebook/i);
 	runtime.stop();
 });
 
@@ -60,7 +60,7 @@ test("toggling back to original reuses the iframe instead of rebooting", async (
 
 	assert.equal(code.style.display, "", "original code is shown again");
 	assert.equal(iframes().length, 1, "the iframe is kept, only hidden");
-	assert.match(label(), /interactive notebook/i);
+	assert.match(label(), /interactive marimo notebook/i);
 	assert.equal(globalThis.sessionStorage.getItem("mv-view"), "original");
 	runtime.stop();
 });

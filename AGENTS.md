@@ -1,4 +1,4 @@
-# marimo live
+# Marimo Glance
 
 A pnpm + Turborepo monorepo that detects marimo `.py` notebooks on code-hosting sites and renders them as live interactive WASM notebooks inline via a browser extension, replacing the raw Python view.
 
@@ -29,7 +29,7 @@ runtime   github-host   gitlab-host
      extension ←--------+
 ```
 
-- `notebook-core` imports **nothing internal** — zero monorepo deps. Ships: `isMarimoNotebook()`, `isPythonPath()`, `playgroundUrl()`, `renderNotebookAsIframe()`, plus types (`Host`, `Theme`, `View`, `RenderOptions`, `PlaygroundOptions`).
+- `notebook-core` imports **nothing internal**: zero monorepo deps. Ships: `isMarimoNotebook()`, `isPythonPath()`, `playgroundUrl()`, `renderNotebookAsIframe()`, plus types (`Host`, `Theme`, `View`, `RenderOptions`, `PlaygroundOptions`).
 - Hosts and runtime import **only `notebook-core`**. No circular deps, no reaching sideways.
 - The extension wires a host + runtime together.
 - **Adding a new host requires zero runtime edits.** Implement the `Host` interface and pass it to `createRuntime()`.
@@ -48,22 +48,22 @@ interface Host {
 }
 ```
 
-The extension passes the host to `createRuntime(host)`, which handles detection, mounting, switching, and resilience—no host-specific logic needed in the runtime.
+The extension passes the host to `createRuntime(host)`, which handles detection, mounting, switching, and resilience, no host-specific logic needed in the runtime.
 
 ## Public APIs
 
 ### `@marimo/notebook-core`
 
-- `isMarimoNotebook(source)` — detect marimo notebook from first 4096 chars
-- `isPythonPath(path)` — check if path ends `.py`
-- `playgroundUrl(source, opts?)` — compress notebook, return marimo.app URL with `embed=true`
-- `renderNotebookAsIframe(source, opts?)` — build iframe DOM subtree
-- `className(suffix)` — CSS class builder with `mv-` prefix
+- `isMarimoNotebook(source)`: detect marimo notebook from first 4096 chars
+- `isPythonPath(path)`: check if path ends `.py`
+- `playgroundUrl(source, opts?)`: compress notebook, return marimo.app URL with `embed=true`
+- `renderNotebookAsIframe(source, opts?)`: build iframe DOM subtree
+- `className(suffix)`: CSS class builder with `mv-` prefix
 - Types: `Host`, `Theme`, `View`, `PlaygroundOptions`, `RenderOptions`
 
 ### `@marimo/extension-runtime`
 
-- `createRuntime(host, options?)` → `{ start(), stop(), syncNow() }` — host-agnostic reconcile-on-observe controller
+- `createRuntime(host, options?)` → `{ start(), stop(), syncNow() }`: host-agnostic reconcile-on-observe controller
   - `start()`: begin observing; run initial reconcile
   - `stop()`: disconnect observer, teardown injection, reject further work
   - `syncNow()`: run one reconcile pass (used in tests and manual triggers)
@@ -71,7 +71,7 @@ The extension passes the host to `createRuntime(host)`, which handles detection,
 
 ### `@marimo/host-github`
 
-- `githubHost` — Host impl for github.com (blobs) + gist.github.com
+- `githubHost`: Host impl for github.com (blobs) + gist.github.com
   - Blob: source from `/blob/` → `/raw/` conversion
   - Gist: source + anchor from DOM (first `.py` file)
   - `readTheme()` from `<html data-color-mode>`
@@ -81,12 +81,12 @@ The extension passes the host to `createRuntime(host)`, which handles detection,
 
 All commands run through Turbo at the repo root:
 
-- `pnpm build` — compile all packages; outputs to `dist/` (packages) or `output/` (extension)
-- `pnpm dev` — watch mode (tsc --watch per package, WXT hot reload for extension)
-- `pnpm compile` — typecheck only (tsc --noEmit)
-- `pnpm lint` — oxlint across all source
-- `pnpm test` — run tests (node --test per package)
-- `pnpm clean` — remove build artifacts
+- `pnpm build`: compile all packages; outputs to `dist/` (packages) or `output/` (extension)
+- `pnpm dev`: watch mode (tsc --watch per package, WXT hot reload for extension)
+- `pnpm compile`: typecheck only (tsc --noEmit)
+- `pnpm lint`: oxlint across all source
+- `pnpm test`: run tests (node --test per package)
+- `pnpm clean`: remove build artifacts
 
 Per-package scripts (e.g., `cd packages/notebook-core && pnpm build`) work too, but prefer repo-level commands.
 
@@ -98,14 +98,14 @@ Per-package scripts (e.g., `cd packages/notebook-core && pnpm build`) work too, 
 - **Extension:** WXT 0.20.27 (esbuild bundler, MV3 for Chrome, MV2 for Firefox)
 
 Per-package structure:
-- `src/index.ts` — public exports
-- `src/*.ts` — implementation
-- `test/*.test.mjs` — tests (ESM, run with `node --test`)
-- `tsconfig.json` — package config (extends `../tsconfig.base.json`)
+- `src/index.ts`: public exports
+- `src/*.ts`: implementation
+- `test/*.test.mjs`: tests (ESM, run with `node --test`)
+- `tsconfig.json`: package config (extends `../tsconfig.base.json`)
 
 Extension build outputs:
-- `apps/extension/output/chrome-mv3/` — Chrome production build
-- `apps/extension/output/firefox-mv2/` — Firefox production build
+- `apps/extension/output/chrome-mv3/`: Chrome production build
+- `apps/extension/output/firefox-mv2/`: Firefox production build
 - WXT generates `apps/extension/.wxt/` during build (gitignored)
 
 ## Important gotcha: pnpm sandbox restriction
@@ -151,7 +151,7 @@ For manual testing:
 3. Add the package to the extension's `package.json` if you want it wired in (or leave it as a standalone lib)
 4. In the extension's content script, import and pass the new host to `createRuntime()`
 
-That's it — no changes to the runtime or core.
+That's it: no changes to the runtime or core.
 
 ## Notes
 
