@@ -47,6 +47,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Build workspace libraries
+        run: pnpm build
+
       - name: Build & zip (Chrome)
         run: pnpm --filter @marimo/extension zip
 

@@ -11,7 +11,7 @@
       "persistent": true
     },
     "compile": {
-      "dependsOn": ["^compile"],
+      "dependsOn": ["^build"],
       "outputs": []
     },
     "lint": {
