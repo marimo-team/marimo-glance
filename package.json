@@ -1,0 +1,21 @@
+{
+  "name": "marimo-glance",
+  "description": "Render marimo notebooks inline on GitHub and gists instead of raw Python source.",
+  "private": true,
+  "packageManager": "pnpm@11.11.0",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "compile": "turbo run compile",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean": "turbo run clean"
+  },
+  "devDependencies": {
+    "oxlint": "1.74.0",
+    "turbo": "2.10.5",
+    "typescript": "7.0.2"
+  }
+}

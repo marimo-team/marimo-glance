@@ -1,0 +1,28 @@
+{
+  "name": "@marimo/extension-runtime",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc --watch -p tsconfig.json",
+    "compile": "tsc --noEmit -p tsconfig.json",
+    "lint": "oxlint src",
+    "test": "node --test test/*.test.mjs",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@marimo/notebook-core": "workspace:*"
+  },
+  "devDependencies": {
+    "jsdom": "29.1.1"
+  }
+}
