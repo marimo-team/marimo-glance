@@ -1,5 +1,8 @@
 # Marimo Glance
 
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/emnkplkdlpojjembfbkdagibhmippjfg?label=Chrome%20Web%20Store&logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/emnkplkdlpojjembfbkdagibhmippjfg)
+[![Firefox Add-on](https://img.shields.io/amo/v/marimo-glance?label=Firefox%20Add-on&logo=firefoxbrowser&logoColor=white)](https://addons.mozilla.org/firefox/addon/marimo-glance)
+
 See marimo notebooks at a glance.
 
 marimo notebooks are just Python files, so GitHub and gists show them as source code. This extension detects a notebook and adds a **"Switch to interactive marimo notebook"** button in the bottom-right of the page. Click it and the raw Python is replaced with an interactive WASM notebook. The **"See original"** button switches you back.
