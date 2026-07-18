@@ -9,7 +9,7 @@ packages/
   notebook-core/        Public API: detect, render, playground URL, types
   extension-runtime/    Reconcile-on-observe controller + switching UI
   host-github/          GitHub.com + gist.github.com implementation
-  host-gitlab/          Placeholder (not yet implemented)
+  host-gitlab/          GitLab.com implementation
 apps/
   extension/            WXT browser extension (Chrome + Firefox)
 ```
@@ -155,7 +155,7 @@ That's it: no changes to the runtime or core.
 
 ## Notes
 
-- The extension's content script runs on `github.com/*` and `gist.github.com/*` only (see `apps/extension/wxt.config.ts`)
+- The extension's content script runs on `github.com/*`, `gist.github.com/*`, and `gitlab.com/*` only (see `apps/extension/wxt.config.ts`)
 - Hosts share the runtime's floating UI switcher (notebook ↔ original code), theme detection, CSP fallback, and reconcile-on-observe logic
-- GitLab host is stubbed; phase 5 of the original plan
+- GitLab host is implemented (`gitlab.com` blobs), fetching raw source same-origin using the user's session
 - Playground ref is `marimo-glance:<surface>` (e.g., `marimo-glance:github`, `marimo-glance:gist`)

@@ -78,7 +78,7 @@ The rendering logic is kept separate from the extension so the core stays reusab
 | `@marimo/notebook-core`     | Portable core: detect a notebook, build the playground URL, render the iframe.  |
 | `@marimo/extension-runtime` | Watches the page and mounts the opt-in switcher; survives soft navigations.     |
 | `@marimo/host-github`       | Teaches the runtime about `github.com` blobs and `gist.github.com`.             |
-| `@marimo/host-gitlab`       | Placeholder for GitLab support.                                                 |
+| `@marimo/host-gitlab`       | Teaches the runtime about `gitlab.com` blobs.                                   |
 | `apps/extension`            | The [WXT](https://wxt.dev) extension for Chrome and Firefox.                    |
 
 ### Core invariant: dependency direction
