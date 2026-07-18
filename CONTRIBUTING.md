@@ -41,6 +41,34 @@ pnpm test           # run the tests
 pnpm build          # full build (extension lands in apps/extension/output/)
 ```
 
+## Building the extension from source
+
+These steps reproduce the exact packaged extension that is published to the
+Chrome Web Store and Firefox Add-ons, starting from a clean checkout or the
+source archive submitted to Firefox Add-ons.
+
+Requirements:
+
+- Node.js 24
+- pnpm 11.11.0 — pinned in the root `package.json` `"packageManager"` field, so
+  `corepack enable` selects the right version automatically.
+
+```bash
+corepack enable
+pnpm install --frozen-lockfile
+pnpm build                                    # compiles the @marimo/* libraries
+pnpm --filter @marimo/extension build:firefox # or `build` for Chrome
+```
+
+The built extension lands in `apps/extension/output/firefox-mv2/` (or
+`chrome-mv3/` for Chrome). Run `pnpm build` before the browser-specific step: it
+compiles the `@marimo/*` workspace libraries the extension imports, and skipping
+it makes the bundler fail to resolve those imports.
+
+To produce the uploadable archives instead of an unpacked build, use
+`pnpm --filter @marimo/extension zip` (Chrome) or `zip:firefox` (Firefox); the
+Firefox command also emits a `-sources.zip` of this monorepo.
+
 ## Repository layout
 
 The rendering logic is kept separate from the extension so the core stays reusable.

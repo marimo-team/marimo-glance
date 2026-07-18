@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    name: Lint, typecheck & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm lint
+
+      - run: pnpm compile
+
+      - run: pnpm test
+
+  extension:
+    name: Build & package extension
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build & zip (Chrome)
+        run: pnpm --filter @marimo/extension zip
+
+      - name: Build & zip (Firefox)
+        run: pnpm --filter @marimo/extension zip:firefox
+
+      - name: Validate Firefox build (web-ext lint)
+        run: pnpm --filter @marimo/extension exec web-ext lint --source-dir output/firefox-mv2 --self-hosted
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: extension-zips
+          path: apps/extension/output/*.zip
+          if-no-files-found: error

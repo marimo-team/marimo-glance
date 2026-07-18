@@ -4,6 +4,19 @@ import { HOST_PERMISSIONS } from "./hosts";
 // See https://wxt.dev/api/config.html
 export default defineConfig({
 	outDir: "output",
+	// The extension depends on the sibling `@marimo/*` workspace packages, so the
+	// Firefox sources ZIP must contain the whole monorepo for a reviewer to run
+	// `pnpm install` and reproduce the build. Zip from the repo root and drop
+	// only generated artifacts (node_modules and dotfiles are excluded by default).
+	zip: {
+		sourcesRoot: "../..",
+		excludeSources: [
+			"**/dist/**",
+			"**/output/**",
+			"**/.wxt/**",
+			"**/.turbo/**",
+		],
+	},
 	manifest: ({ browser }) => ({
 		name: "Marimo Glance",
 		description:
@@ -16,6 +29,7 @@ export default defineConfig({
 		...(browser === "firefox" && {
 			browser_specific_settings: {
 				gecko: {
+					id: "marimo-glance@marimo.io",
 					data_collection_permissions: { required: ["none"] },
 				},
 			},
