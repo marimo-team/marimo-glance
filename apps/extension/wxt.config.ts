@@ -18,7 +18,7 @@ export default defineConfig({
 		],
 	},
 	manifest: ({ browser }) => ({
-		name: "Marimo Glance",
+		name: "marimo Glance",
 		description:
 			"See marimo notebooks at a glance: run them live, inline on GitHub and gists.",
 		host_permissions: HOST_PERMISSIONS,

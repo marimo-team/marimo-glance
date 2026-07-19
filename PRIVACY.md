@@ -2,11 +2,11 @@
 
 _Last updated: 2026-07-17_
 
-Marimo Glance is an official marimo extension that renders marimo notebooks inline on code-hosting sites. It is built and maintained by the marimo team, and it is designed so that your data stays on your machine. This policy describes exactly what the extension reads, what it sends, and what it does not.
+marimo Glance is an official marimo extension that renders marimo notebooks inline on code-hosting sites. It is built and maintained by the marimo team, and it is designed so that your data stays on your machine. This policy describes exactly what the extension reads, what it sends, and what it does not.
 
 ## Summary
 
-Marimo Glance does not collect, store, transmit, or sell personal data. It has no accounts and does not track you across sites or over time. The notebook you preview never leaves your browser as readable content, and we never learn which repository or file you are viewing. The only signal that reaches a marimo server is a fixed tag identifying the extension as the source of a preview, which the marimo team counts for aggregate usage — it says nothing about you.
+marimo Glance does not collect, store, transmit, or sell personal data. It has no accounts and does not track you across sites or over time. The notebook you preview never leaves your browser as readable content, and we never learn which repository or file you are viewing. The only signal that reaches a marimo server is a fixed tag identifying the extension as the source of a preview, which the marimo team counts for aggregate usage — it says nothing about you.
 
 ## What the extension reads
 

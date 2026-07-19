@@ -1,6 +1,6 @@
-# Contributing to Marimo Glance
+# Contributing to marimo Glance
 
-Thanks for your interest in contributing! Marimo Glance is a browser extension that detects marimo notebooks on code-hosting sites and renders them as live, interactive WASM notebooks inline. Issues and pull requests are welcome.
+Thanks for your interest in contributing! marimo Glance is a browser extension that detects marimo notebooks on code-hosting sites and renders them as live, interactive WASM notebooks inline. Issues and pull requests are welcome.
 
 By participating in this project, you agree to abide by our [Code of Conduct](./CODE_OF_CONDUCT.md).
 

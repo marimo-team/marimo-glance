@@ -17,6 +17,10 @@ stats-*.json
 .wxt
 web-ext.config.ts
 
+# Signing keys and packed extensions — never commit these
+*.pem
+*.crx
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

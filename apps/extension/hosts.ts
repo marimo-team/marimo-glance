@@ -1,5 +1,5 @@
 /**
- * The page origins Marimo Glance runs on. The content script matches these and
+ * The page origins marimo Glance runs on. The content script matches these and
  * the manifest must request them; deriving both from this one list keeps the
  * content script and the manifest from drifting apart.
  */

@@ -1,4 +1,4 @@
-# Marimo Glance
+# marimo Glance
 
 See marimo notebooks at a glance.
 

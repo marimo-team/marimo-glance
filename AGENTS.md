@@ -1,4 +1,4 @@
-# Marimo Glance
+# marimo Glance
 
 A pnpm + Turborepo monorepo that detects marimo `.py` notebooks on code-hosting sites and renders them as live interactive WASM notebooks inline via a browser extension, replacing the raw Python view.
 
