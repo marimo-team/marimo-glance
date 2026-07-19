@@ -79,7 +79,6 @@ export function createRuntime(
 
 		const anchor = host.findAnchor();
 		if (!anchor) return; // DOM not ready yet; a later observer tick retries.
-		handledKey = key;
 
 		const source = await host.getSource(url);
 
@@ -89,15 +88,17 @@ export function createRuntime(
 		// The page may have navigated, torn down, or been stopped while awaiting.
 		const code = host.findAnchor();
 		if (disposed || pageKey(new URL(window.location.href)) !== key || !code) {
-			handledKey = null;
 			return;
 		}
-		// A failed fetch stays retryable; only a page that fetched cleanly but is
-		// not a notebook is memoized, which is the cheap, correct thing to skip.
-		if (source === null) {
-			handledKey = null;
-			return;
-		}
+		// A failed fetch stays retryable; a clean fetch is the terminal outcome.
+		if (source === null) return;
+
+		// Memoize only here, past the await, never before it. Setting handledKey
+		// up front lets an interloping pass short-circuit at the key check above
+		// to a no-op while the epoch guard kills the pass that is still fetching,
+		// stranding the key as handled with nothing injected.
+		handledKey = key;
+
 		if (!isMarimoNotebook(source)) return;
 
 		teardown?.();

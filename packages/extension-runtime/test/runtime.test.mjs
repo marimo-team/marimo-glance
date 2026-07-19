@@ -228,6 +228,33 @@ test("overlapping syncs across a navigation inject once without a reboot", async
 	runtime.stop();
 });
 
+test("a same-page tick during the fetch still injects", async () => {
+	installDom();
+	seedCodePage();
+	globalThis.sessionStorage.setItem("mv-view", "notebook");
+
+	let release;
+	const gate = new Promise((resolve) => {
+		release = resolve;
+	});
+	const runtime = createRuntime(
+		makeHost({
+			getSource: async () => {
+				await gate;
+				return "import marimo\n\napp = marimo.App()\n";
+			},
+		}),
+	);
+
+	const first = runtime.syncNow(); // suspends on getSource for this URL
+	const second = runtime.syncNow(); // an observer tick on the same URL, mid-fetch
+	release();
+	await Promise.all([first, second]);
+
+	assert.equal(iframes().length, 1, "the overlap does not strand the page unhandled");
+	runtime.stop();
+});
+
 test("a transient fetch failure is retried on a later tick", async () => {
 	installDom();
 	seedCodePage();
