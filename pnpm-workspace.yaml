@@ -4,3 +4,10 @@ packages:
 allowBuilds:
   esbuild: true
   spawn-sync: false
+minimumReleaseAge: 20160
+verifyDepsBeforeRun: install
+blockExoticSubdeps: true
+trustPolicy: no-downgrade
+minimumReleaseAgeExclude:
+  - "@marimo-team/*"
+onlyBuiltDependencies: []
