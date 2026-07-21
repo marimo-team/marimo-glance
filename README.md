@@ -1,7 +1,7 @@
 # marimo Glance
 
-[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/emnkplkdlpojjembfbkdagibhmippjfg?label=Chrome%20Web%20Store&logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/emnkplkdlpojjembfbkdagibhmippjfg)
-[![Firefox Add-on](https://img.shields.io/amo/v/marimo-glance?label=Firefox%20Add-on&logo=firefoxbrowser&logoColor=white)](https://addons.mozilla.org/firefox/addon/marimo-glance)
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/emnkplkdlpojjembfbkdagibhmippjfg?label=Chrome%20Web%20Store&logo=googlechrome&logoColor=white&color=informational)](https://chromewebstore.google.com/detail/emnkplkdlpojjembfbkdagibhmippjfg)
+[![Firefox Add-on](https://img.shields.io/amo/v/marimo-glance?label=Firefox%20Add-on&logo=firefoxbrowser&logoColor=white&color=informational)](https://addons.mozilla.org/firefox/addon/marimo-glance)
 
 See marimo notebooks at a glance.
 
