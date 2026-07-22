@@ -2,7 +2,7 @@
   "name": "marimo-glance",
   "description": "Render marimo notebooks inline on GitHub and gists instead of raw Python source.",
   "private": true,
-  "packageManager": "pnpm@11.11.0",
+  "packageManager": "pnpm@11.15.0",
   "version": "0.0.0",
   "type": "module",
   "scripts": {
