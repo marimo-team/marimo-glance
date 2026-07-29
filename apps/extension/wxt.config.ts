@@ -1,9 +1,12 @@
+import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "wxt";
 import { HOST_PERMISSIONS } from "./hosts";
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
 	outDir: "output",
+	modules: ["@wxt-dev/module-react"],
+	vite: () => ({ plugins: [tailwindcss()] }),
 	// The extension depends on the sibling `@marimo/*` workspace packages, so the
 	// Firefox sources ZIP must contain the whole monorepo for a reviewer to run
 	// `pnpm install` and reproduce the build. Zip from the repo root and drop
