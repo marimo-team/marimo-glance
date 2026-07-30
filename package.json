@@ -16,7 +16,7 @@
     "pack:crx": "bash scripts/pack-crx.sh"
   },
   "devDependencies": {
-    "oxfmt": "0.61.0",
+    "oxfmt": "0.60.0",
     "oxlint": "1.74.0",
     "turbo": "2.10.5",
     "typescript": "7.0.2"

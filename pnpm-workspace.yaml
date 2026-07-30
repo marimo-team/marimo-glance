@@ -4,3 +4,8 @@ packages:
 allowBuilds:
   esbuild: true
   spawn-sync: false
+# Refuse to install anything published in the last 7 days. Compromised npm
+# releases are typically caught and unpublished within hours, so the delay
+# filters most package-poisoning attacks. Applies to transitive dependencies
+# and manual `pnpm add`, which Renovate's own minimumReleaseAge cannot cover.
+minimumReleaseAge: 10080
