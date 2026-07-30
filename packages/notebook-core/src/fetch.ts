@@ -3,10 +3,10 @@
  * error so callers treat "unavailable" uniformly (and can retry).
  */
 export async function fetchText(url: string): Promise<string | null> {
-	try {
-		const response = await fetch(url);
-		return response.ok ? await response.text() : null;
-	} catch {
-		return null;
-	}
+  try {
+    const response = await fetch(url);
+    return response.ok ? await response.text() : null;
+  } catch {
+    return null;
+  }
 }

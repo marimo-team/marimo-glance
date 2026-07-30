@@ -1,19 +1,16 @@
 import { isPythonPath } from "@marimo/notebook-core";
 
-const BLOB_HOST = "gitlab.com";
-
 /**
  * A GitLab file view for a Python file. GitLab routes carry a literal `/-/`
  * delimiter between the (possibly nested) project namespace and the route verb,
  * so a blob path looks like `/group/subgroup/project/-/blob/ref/path/to/file.py`.
- * Only these carry a single file whose raw source can be derived from the URL.
+ *
+ * The hostname is deliberately not checked: self-hosted instances live on
+ * arbitrary hostnames, and which origins may be touched at all is decided by the
+ * extension's host permissions rather than by this predicate.
  */
 export function isBlobUrl(url: URL): boolean {
-	return (
-		url.hostname === BLOB_HOST &&
-		url.pathname.includes("/-/blob/") &&
-		isPythonPath(url.pathname)
-	);
+  return url.pathname.includes("/-/blob/") && isPythonPath(url.pathname);
 }
 
 /**
@@ -24,5 +21,5 @@ export function isBlobUrl(url: URL): boolean {
  * disambiguates a branch from a same-named tag — dropping it fetches the wrong ref.
  */
 export function blobRawUrl(url: URL): string {
-	return `${url.origin}${url.pathname.replace("/-/blob/", "/-/raw/")}${url.search}`;
+  return `${url.origin}${url.pathname.replace("/-/blob/", "/-/raw/")}${url.search}`;
 }

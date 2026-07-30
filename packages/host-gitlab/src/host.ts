@@ -10,22 +10,22 @@ import { blobRawUrl, isBlobUrl } from "./urls.js";
  * element to insert before and hide.
  */
 export const gitlabHost: Host = {
-	id: "gitlab",
+  id: "gitlab",
 
-	matches(url) {
-		return isBlobUrl(url);
-	},
+  matches(url) {
+    return isBlobUrl(url);
+  },
 
-	getSource(url) {
-		return isBlobUrl(url) ? fetchText(blobRawUrl(url)) : Promise.resolve(null);
-	},
+  getSource(url) {
+    return isBlobUrl(url) ? fetchText(blobRawUrl(url)) : Promise.resolve(null);
+  },
 
-	findAnchor() {
-		const url = new URL(window.location.href);
-		return isBlobUrl(url) ? findBlobAnchor(document) : null;
-	},
+  findAnchor() {
+    const url = new URL(window.location.href);
+    return isBlobUrl(url) ? findBlobAnchor(document) : null;
+  },
 
-	readTheme() {
-		return readGitLabTheme(document);
-	},
+  readTheme() {
+    return readGitLabTheme(document);
+  },
 };

@@ -33,4 +33,7 @@ jobs:
       # don't let them block uploading the fixes that did apply.
       - run: pnpm exec oxlint --fix || true
 
+      # Formatting runs after the lint fixes so it has the last word on layout.
+      - run: pnpm format
+
       - uses: autofix-ci/action@c5b2d67aa2274e7b5a18224e8171550871fc7e4a # v1.3.4

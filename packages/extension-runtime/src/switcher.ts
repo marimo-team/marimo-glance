@@ -9,24 +9,22 @@ const DEFAULT_AUTO_COLLAPSE_MS = 4000;
 type Mode = "prompt" | "active" | "blocked";
 
 export interface Switcher {
-	/** React to the notebook being blocked: fall back to the original view. */
-	handleBlocked(): void;
-	/** Remove the switcher from the page. */
-	dispose(): void;
+  /** React to the notebook being blocked: fall back to the original view. */
+  handleBlocked(): void;
+  /** Remove the switcher from the page. */
+  dispose(): void;
 }
 
 export interface SwitcherOptions {
-	view: NotebookView;
-	initialView: View;
-	/** How long the prompt stays expanded before collapsing. 0 disables it. */
-	autoCollapseMs?: number;
+  view: NotebookView;
+  initialView: View;
+  /** How long the prompt stays expanded before collapsing. 0 disables it. */
+  autoCollapseMs?: number;
 }
 
 /** Read the persisted view. Absent means original — the notebook is opt-in. */
 export function savedView(): View {
-	return sessionStorage.getItem(VIEW_STORAGE_KEY) === "notebook"
-		? "notebook"
-		: "original";
+  return sessionStorage.getItem(VIEW_STORAGE_KEY) === "notebook" ? "notebook" : "original";
 }
 
 /**
@@ -36,108 +34,107 @@ export function savedView(): View {
  * view. On a CSP block it falls back to the original code and says so.
  */
 export function installSwitcher(options: SwitcherOptions): Switcher {
-	ensureStyles();
+  ensureStyles();
 
-	const root = document.createElement("div");
-	root.className = className("switcher");
+  const root = document.createElement("div");
+  root.className = className("switcher");
 
-	const button = document.createElement("button");
-	button.type = "button";
-	button.className = className("switcher__button");
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = className("switcher__button");
 
-	const labelText = document.createElement("span");
-	labelText.className = className("switcher__label");
-	button.append(labelText);
+  const labelText = document.createElement("span");
+  labelText.className = className("switcher__label");
+  button.append(labelText);
 
-	const hint = document.createElement("span");
-	hint.className = className("switcher__hint");
-	hint.textContent = "marimo notebook detected · runs in your browser (WASM)";
+  const hint = document.createElement("span");
+  hint.className = className("switcher__hint");
+  hint.textContent = "marimo notebook detected · runs in your browser (WASM)";
 
-	root.append(hint);
-	root.append(button);
-	document.body.append(root);
+  root.append(hint);
+  root.append(button);
+  document.body.append(root);
 
-	let mode: Mode = "prompt";
-	let collapseTimer: ReturnType<typeof setTimeout> | undefined;
+  let mode: Mode = "prompt";
+  let collapseTimer: ReturnType<typeof setTimeout> | undefined;
 
-	const render = () => {
-		root.dataset.mode = mode;
-		labelText.textContent =
-			mode === "active"
-				? "See original"
-				: mode === "blocked"
-					? "Couldn't load — blocked by this site"
-					: "Switch to interactive marimo notebook";
-	};
+  const render = () => {
+    root.dataset.mode = mode;
+    labelText.textContent =
+      mode === "active"
+        ? "See original"
+        : mode === "blocked"
+          ? "Couldn't load — blocked by this site"
+          : "Switch to interactive marimo notebook";
+  };
 
-	const setExpanded = (expanded: boolean) => {
-		root.toggleAttribute("data-expanded", expanded);
-		button.setAttribute("aria-expanded", String(expanded));
-	};
+  const setExpanded = (expanded: boolean) => {
+    root.toggleAttribute("data-expanded", expanded);
+    button.setAttribute("aria-expanded", String(expanded));
+  };
 
-	const persist = (view: View) =>
-		sessionStorage.setItem(VIEW_STORAGE_KEY, view);
+  const persist = (view: View) => sessionStorage.setItem(VIEW_STORAGE_KEY, view);
 
-	const activate = () => {
-		mode = "active";
-		options.view.show();
-		persist("notebook");
-		clearTimeout(collapseTimer);
-		setExpanded(false);
-		render();
-	};
+  const activate = () => {
+    mode = "active";
+    options.view.show();
+    persist("notebook");
+    clearTimeout(collapseTimer);
+    setExpanded(false);
+    render();
+  };
 
-	const deactivate = () => {
-		mode = "prompt";
-		options.view.hide();
-		persist("original");
-		render();
-	};
+  const deactivate = () => {
+    mode = "prompt";
+    options.view.hide();
+    persist("original");
+    render();
+  };
 
-	button.addEventListener("click", () => {
-		// A blocked notebook has a dead iframe; re-showing it would flash a blank
-		// frame and re-arm auto-activation, so the pill only reports the failure.
-		if (mode === "blocked") return;
-		if (mode === "active") deactivate();
-		else activate();
-	});
+  button.addEventListener("click", () => {
+    // A blocked notebook has a dead iframe; re-showing it would flash a blank
+    // frame and re-arm auto-activation, so the pill only reports the failure.
+    if (mode === "blocked") return;
+    if (mode === "active") deactivate();
+    else activate();
+  });
 
-	const expand = () => {
-		if (mode !== "active") setExpanded(true);
-	};
-	const collapse = () => setExpanded(false);
-	root.addEventListener("mouseenter", expand);
-	root.addEventListener("mouseleave", collapse);
-	button.addEventListener("focus", expand);
-	button.addEventListener("blur", collapse);
+  const expand = () => {
+    if (mode !== "active") setExpanded(true);
+  };
+  const collapse = () => setExpanded(false);
+  root.addEventListener("mouseenter", expand);
+  root.addEventListener("mouseleave", collapse);
+  button.addEventListener("focus", expand);
+  button.addEventListener("blur", collapse);
 
-	if (options.initialView === "notebook") {
-		activate();
-	} else {
-		render();
-		// Announce once on detection, then settle out of the way.
-		setExpanded(true);
-		const ms = options.autoCollapseMs ?? DEFAULT_AUTO_COLLAPSE_MS;
-		if (ms > 0) {
-			collapseTimer = setTimeout(() => {
-				if (mode === "prompt") setExpanded(false);
-			}, ms);
-		}
-	}
+  if (options.initialView === "notebook") {
+    activate();
+  } else {
+    render();
+    // Announce once on detection, then settle out of the way.
+    setExpanded(true);
+    const ms = options.autoCollapseMs ?? DEFAULT_AUTO_COLLAPSE_MS;
+    if (ms > 0) {
+      collapseTimer = setTimeout(() => {
+        if (mode === "prompt") setExpanded(false);
+      }, ms);
+    }
+  }
 
-	return {
-		handleBlocked() {
-			mode = "blocked";
-			options.view.hide();
-			persist("original");
-			setExpanded(true);
-			render();
-		},
-		dispose() {
-			clearTimeout(collapseTimer);
-			root.remove();
-		},
-	};
+  return {
+    handleBlocked() {
+      mode = "blocked";
+      options.view.hide();
+      persist("original");
+      setExpanded(true);
+      render();
+    },
+    dispose() {
+      clearTimeout(collapseTimer);
+      root.remove();
+    },
+  };
 }
 
 /**
@@ -145,11 +142,11 @@ export function installSwitcher(options: SwitcherOptions): Switcher {
  * host's document, so an id guard keeps re-injection across navigations cheap.
  */
 function ensureStyles(): void {
-	if (document.getElementById(STYLE_ELEMENT_ID)) return;
-	const style = document.createElement("style");
-	style.id = STYLE_ELEMENT_ID;
-	style.textContent = SWITCHER_CSS;
-	document.head.append(style);
+  if (document.getElementById(STYLE_ELEMENT_ID)) return;
+  const style = document.createElement("style");
+  style.id = STYLE_ELEMENT_ID;
+  style.textContent = SWITCHER_CSS;
+  document.head.append(style);
 }
 
 const SWITCHER_CSS = `

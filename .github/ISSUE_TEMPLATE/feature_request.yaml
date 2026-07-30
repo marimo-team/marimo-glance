@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/SchemaStore/schemastore/refs/heads/master/src/schemas/json/github-issue-forms.json
-name: '🚀 New feature proposal'
+name: "🚀 New feature proposal"
 description: Propose a new feature for Marimo Glance
 labels: [enhancement, needs discussion]
 type: Feature
@@ -12,7 +12,7 @@ body:
     id: feature-description
     attributes:
       label: Description
-      description: 'A clear and concise description of the problem you are facing. Please describe your use case in detail. Thanks!'
+      description: "A clear and concise description of the problem you are facing. Please describe your use case in detail. Thanks!"
       placeholder: I am hoping to be able to ...
     validations:
       required: true
@@ -41,4 +41,4 @@ body:
         However, please confirm with us on whether your proposed feature
         fits with our roadmap before submitting a PR.
       options:
-        - label: 'Yes'
+        - label: "Yes"

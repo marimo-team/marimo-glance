@@ -6,5 +6,5 @@ import type { Host, Theme } from "@marimo/notebook-core";
  * the viewer's OS preference.
  */
 export function resolveTheme(host: Host): Theme {
-	return host.readTheme?.() ?? "system";
+  return host.readTheme?.() ?? "system";
 }

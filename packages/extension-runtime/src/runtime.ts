@@ -5,29 +5,29 @@ import { installSwitcher, type Switcher, savedView } from "./switcher.js";
 import { resolveTheme } from "./theme.js";
 
 export interface RuntimeOptions {
-	/** Provenance tag forwarded to the playground URL as `ref`. */
-	ref?: string;
-	/**
-	 * Defer a coalesced reconcile pass. Defaults to `requestAnimationFrame`.
-	 * Injectable so tests can drive scheduling deterministically.
-	 */
-	schedule?: (callback: () => void) => void;
-	/** Milliseconds to wait for the iframe before treating it as blocked. */
-	loadTimeoutMs?: number;
+  /** Provenance tag forwarded to the playground URL as `ref`. */
+  ref?: string;
+  /**
+   * Defer a coalesced reconcile pass. Defaults to `requestAnimationFrame`.
+   * Injectable so tests can drive scheduling deterministically.
+   */
+  schedule?: (callback: () => void) => void;
+  /** Milliseconds to wait for the iframe before treating it as blocked. */
+  loadTimeoutMs?: number;
 }
 
 /** The reconcile identity of a page: distinct branch/tag refs must differ. */
 function pageKey(url: URL): string {
-	return url.pathname + url.search;
+  return url.pathname + url.search;
 }
 
 export interface Runtime {
-	/** Begin observing the page and run an initial reconcile pass. */
-	start(): void;
-	/** Stop observing, remove any injection, and reject further work. */
-	stop(): void;
-	/** Run one reconcile pass immediately. Exposed for the initial pass and tests. */
-	syncNow(): Promise<void>;
+  /** Begin observing the page and run an initial reconcile pass. */
+  start(): void;
+  /** Stop observing, remove any injection, and reject further work. */
+  stop(): void;
+  /** Run one reconcile pass immediately. Exposed for the initial pass and tests. */
+  syncNow(): Promise<void>;
 }
 
 /**
@@ -37,100 +37,96 @@ export interface Runtime {
  * idempotent and keyed on the URL, so repeated observer ticks are cheap and a
  * same-page re-render that wipes the injection is repaired on the next tick.
  */
-export function createRuntime(
-	host: Host,
-	options: RuntimeOptions = {},
-): Runtime {
-	const schedule =
-		options.schedule ?? ((callback) => requestAnimationFrame(callback));
+export function createRuntime(host: Host, options: RuntimeOptions = {}): Runtime {
+  const schedule = options.schedule ?? ((callback) => requestAnimationFrame(callback));
 
-	let injectedAgainst: HTMLElement | null = null;
-	let handledKey: string | null = null;
-	let teardown: (() => void) | null = null;
-	let observer: MutationObserver | null = null;
-	let scheduled = false;
-	let disposed = false;
-	// Bumped by every pass so a pass that resumes after `await` can tell whether
-	// a newer pass has taken over and, if so, leave the shared state to it.
-	let epoch = 0;
+  let injectedAgainst: HTMLElement | null = null;
+  let handledKey: string | null = null;
+  let teardown: (() => void) | null = null;
+  let observer: MutationObserver | null = null;
+  let scheduled = false;
+  let disposed = false;
+  // Bumped by every pass so a pass that resumes after `await` can tell whether
+  // a newer pass has taken over and, if so, leave the shared state to it.
+  let epoch = 0;
 
-	function reset(): void {
-		teardown?.();
-		teardown = null;
-		injectedAgainst = null;
-		handledKey = null;
-	}
+  function reset(): void {
+    teardown?.();
+    teardown = null;
+    injectedAgainst = null;
+    handledKey = null;
+  }
 
-	async function sync(): Promise<void> {
-		const thisEpoch = ++epoch;
+  async function sync(): Promise<void> {
+    const thisEpoch = ++epoch;
 
-		// Self-heal: a same-page re-render can detach our injection without any
-		// navigation, so drop stale state before deciding what to do.
-		if (injectedAgainst && !injectedAgainst.isConnected) reset();
+    // Self-heal: a same-page re-render can detach our injection without any
+    // navigation, so drop stale state before deciding what to do.
+    if (injectedAgainst && !injectedAgainst.isConnected) reset();
 
-		const url = new URL(window.location.href);
-		if (!host.matches(url)) {
-			reset();
-			return;
-		}
+    const url = new URL(window.location.href);
+    if (!host.matches(url)) {
+      reset();
+      return;
+    }
 
-		const key = pageKey(url);
-		if (key === handledKey) return;
+    const key = pageKey(url);
+    if (key === handledKey) return;
 
-		const anchor = host.findAnchor();
-		if (!anchor) return; // DOM not ready yet; a later observer tick retries.
+    const anchor = host.findAnchor();
+    if (!anchor) return; // DOM not ready yet; a later observer tick retries.
 
-		const source = await host.getSource(url);
+    const source = await host.getSource(url);
 
-		// A newer pass started while awaiting; it owns the shared state now.
-		if (thisEpoch !== epoch) return;
+    // A newer pass started while awaiting; it owns the shared state now.
+    if (thisEpoch !== epoch) return;
 
-		// The page may have navigated, torn down, or been stopped while awaiting.
-		const code = host.findAnchor();
-		if (disposed || pageKey(new URL(window.location.href)) !== key || !code) {
-			return;
-		}
-		// A failed fetch stays retryable; a clean fetch is the terminal outcome.
-		if (source === null) return;
+    // The page may have navigated, torn down, or been stopped while awaiting.
+    const code = host.findAnchor();
+    if (disposed || pageKey(new URL(window.location.href)) !== key || !code) {
+      return;
+    }
+    // A failed fetch stays retryable; a clean fetch is the terminal outcome.
+    if (source === null) return;
 
-		// Memoize only here, past the await, never before it. Setting handledKey
-		// up front lets an interloping pass short-circuit at the key check above
-		// to a no-op while the epoch guard kills the pass that is still fetching,
-		// stranding the key as handled with nothing injected.
-		handledKey = key;
+    // Memoize only here, past the await, never before it. Setting handledKey
+    // up front lets an interloping pass short-circuit at the key check above
+    // to a no-op while the epoch guard kills the pass that is still fetching,
+    // stranding the key as handled with nothing injected.
+    handledKey = key;
 
-		if (!isMarimoNotebook(source)) return;
+    if (!isMarimoNotebook(source)) return;
 
-		teardown?.();
-		teardown = inject(code, source, resolveTheme(host), options);
-		injectedAgainst = code;
-	}
+    teardown?.();
+    teardown = inject(code, source, resolveTheme(host), options);
+    injectedAgainst = code;
+  }
 
-	function trigger(): void {
-		if (scheduled || disposed) return;
-		scheduled = true;
-		schedule(() => {
-			scheduled = false;
-			void sync();
-		});
-	}
+  function trigger(): void {
+    if (scheduled || disposed) return;
+    scheduled = true;
+    schedule(() => {
+      scheduled = false;
+      void sync();
+    });
+  }
 
-	return {
-		start() {
-			if (observer) return;
-			disposed = false;
-			observer = new MutationObserver(trigger);
-			observer.observe(document.body, { childList: true, subtree: true });
-			void sync();
-		},
-		stop() {
-			disposed = true;
-			observer?.disconnect();
-			observer = null;
-			reset();
-		},
-		syncNow: sync,
-	};
+  return {
+    start() {
+      if (observer) return;
+      disposed = false;
+      observer = new MutationObserver(trigger);
+      observer.observe(document.body, { childList: true, subtree: true });
+      void sync();
+    },
+    stop() {
+      disposed = true;
+      observer?.disconnect();
+      observer = null;
+      reset();
+    },
+    syncNow: sync,
+  };
 }
 
 /**
@@ -140,24 +136,24 @@ export function createRuntime(
  * handles the CSP fallback for the view it drives.
  */
 function inject(
-	code: HTMLElement,
-	source: string,
-	theme: Theme,
-	options: RuntimeOptions,
+  code: HTMLElement,
+  source: string,
+  theme: Theme,
+  options: RuntimeOptions,
 ): () => void {
-	let switcher: Switcher;
-	const view = createNotebookView({
-		code,
-		source,
-		theme,
-		ref: options.ref,
-		loadTimeoutMs: options.loadTimeoutMs,
-		onBlocked: () => switcher.handleBlocked(),
-	});
-	switcher = installSwitcher({ view, initialView: savedView() });
+  let switcher: Switcher;
+  const view = createNotebookView({
+    code,
+    source,
+    theme,
+    ref: options.ref,
+    loadTimeoutMs: options.loadTimeoutMs,
+    onBlocked: () => switcher.handleBlocked(),
+  });
+  switcher = installSwitcher({ view, initialView: savedView() });
 
-	return () => {
-		switcher.dispose();
-		view.dispose();
-	};
+  return () => {
+    switcher.dispose();
+    view.dispose();
+  };
 }

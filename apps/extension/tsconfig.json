@@ -1,3 +1,22 @@
 {
-  "extends": "./.wxt/tsconfig.json"
+  "extends": "./.wxt/tsconfig.json",
+  "compilerOptions": {
+    // WXT's React module only configures the Vite plugin, which transforms JSX
+    // via esbuild at build time. tsc and editors need the option set directly.
+    "jsx": "react-jsx",
+    // Restated from the generated config, where they are written relative to
+    // `.wxt/`. The shadcn CLI resolves inherited paths against this file rather
+    // than the one declaring them, so it places generated components a
+    // directory too high unless the aliases are anchored here.
+    "paths": {
+      "@": ["."],
+      "@/*": ["./*"],
+      "~": ["."],
+      "~/*": ["./*"],
+      "@@": ["."],
+      "@@/*": ["./*"],
+      "~~": ["."],
+      "~~/*": ["./*"]
+    }
+  }
 }
