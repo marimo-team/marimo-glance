@@ -50,7 +50,7 @@ source archive submitted to Firefox Add-ons.
 Requirements:
 
 - Node.js 24
-- pnpm 11.11.0 — pinned in the root `package.json` `"packageManager"` field, so
+- pnpm — pinned in the root `package.json` `"packageManager"` field, so
   `corepack enable` selects the right version automatically.
 
 ```bash
@@ -68,6 +68,36 @@ it makes the bundler fail to resolve those imports.
 To produce the uploadable archives instead of an unpacked build, use
 `pnpm --filter @marimo/extension zip` (Chrome) or `zip:firefox` (Firefox); the
 Firefox command also emits a `-sources.zip` of this monorepo.
+
+## Releasing
+
+Releases are cut by maintainers from `main` with the **Release** workflow
+(Actions → Release → Run workflow). The version comes from
+`apps/extension/package.json`, so bump it in a PR and merge that first; the
+workflow refuses to run if a tag for the version already exists.
+
+The run pauses for approval on the `release` environment, then builds both
+browser packages, signs the Chrome one, and opens a **draft** GitHub release
+tagged `v<version>` with three assets:
+
+| Asset                                 | Goes to                                                          |
+| ------------------------------------- | ---------------------------------------------------------------- |
+| `marimo-glance-<version>.crx`         | Chrome Web Store — _Package → Upload new package_                |
+| `marimo-glance-<version>-firefox.zip` | Firefox Add-ons — _Upload New Version_                           |
+| `marimo-glance-<version>-sources.zip` | Firefox Add-ons, when it asks for the sources of a bundled build |
+
+Edit the generated notes, publish the release, then upload the two packages to
+the stores by hand. Tick **dry run** to exercise the whole pipeline without
+creating a tag or release — the artifacts are attached to the workflow run
+instead.
+
+The Chrome package is signed because the listing uses
+[Verified CRX Uploads](https://developer.chrome.com/blog/verified-uploads-cws):
+the dashboard checks the signature against a registered public key and rejects
+anything else, then repackages with Google's own key before publishing. The
+private half lives in the `CRX_PRIVATE_KEY` secret on the `release` environment,
+base64-encoded. `scripts/pack-crx.sh --help` documents signing a package locally
+with the same key.
 
 ## Repository layout
 

@@ -1,0 +1,117 @@
+name: Release
+
+# Builds both browser packages, signs the Chrome one, and opens a draft GitHub
+# release carrying everything needed for the two store uploads. Uploading to the
+# Chrome Web Store and Firefox Add-ons stays manual.
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Build and sign, but create no tag and no release
+        type: boolean
+        default: false
+
+permissions: {}
+
+jobs:
+  release:
+    name: Build, sign & draft release
+    runs-on: ubuntu-latest
+    # Gates the signing key behind a required reviewer, so it is only readable
+    # from a run that was explicitly approved.
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          # Tags are needed to tell an already-released version from a new one.
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Resolve version
+        id: version
+        run: |
+          version="$(node -p "require('./apps/extension/package.json').version")"
+          echo "version=$version" >>"$GITHUB_OUTPUT"
+          echo "tag=v$version" >>"$GITHUB_OUTPUT"
+          echo "Releasing $version"
+
+      # Catches a dispatch that forgot the version bump, before anything is built
+      # or signed, rather than after a store upload is rejected as a duplicate.
+      - name: Check the version is unreleased
+        run: |
+          if git rev-parse -q --verify "refs/tags/${{ steps.version.outputs.tag }}" >/dev/null; then
+            echo "::error::${{ steps.version.outputs.tag }} already exists. Bump the version in apps/extension/package.json first."
+            exit 1
+          fi
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build workspace libraries
+        run: pnpm build
+
+      - name: Build & zip (Chrome)
+        run: pnpm --filter @marimo/extension zip
+
+      # Also emits the sources ZIP that AMO requires for reviewing bundled code.
+      - name: Build & zip (Firefox)
+        run: pnpm --filter @marimo/extension zip:firefox
+
+      - name: Validate Firefox build (web-ext lint)
+        run: pnpm --filter @marimo/extension exec web-ext lint --source-dir output/firefox-mv2 --self-hosted
+
+      # The Web Store verifies uploads against the public key registered under
+      # Verified CRX Uploads, so the package must be signed with its private half
+      # or the dashboard rejects it.
+      - name: Sign the Chrome package
+        env:
+          CRX_PRIVATE_KEY: ${{ secrets.CRX_PRIVATE_KEY }}
+        run: |
+          if [ -z "$CRX_PRIVATE_KEY" ]; then
+            echo "::error::CRX_PRIVATE_KEY is not set on the release environment."
+            exit 1
+          fi
+          # Written outside the workspace so it cannot be picked up by a later
+          # step that globs the repo, and so it dies with the runner.
+          key="$RUNNER_TEMP/crx.pem"
+          printf '%s' "$CRX_PRIVATE_KEY" | base64 --decode >"$key"
+          scripts/pack-crx.sh \
+            --key "$key" \
+            --out "apps/extension/output/marimo-glance-${{ steps.version.outputs.version }}.crx"
+
+      - name: Create draft release
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # Draft, so the generated notes can be rewritten and the assets checked
+          # before any watcher is notified. The Chrome ZIP is deliberately left
+          # out: verified uploads take the signed CRX, and offering both invites
+          # uploading the wrong one.
+          gh release create "${{ steps.version.outputs.tag }}" \
+            --target "$GITHUB_SHA" \
+            --title "${{ steps.version.outputs.tag }}" \
+            --draft \
+            --generate-notes \
+            "apps/extension/output/marimo-glance-$VERSION.crx" \
+            "apps/extension/output/marimo-glance-$VERSION-firefox.zip" \
+            "apps/extension/output/marimo-glance-$VERSION-sources.zip"
+
+      - name: Upload artifacts (dry run)
+        if: ${{ inputs.dry_run }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-artifacts
+          path: |
+            apps/extension/output/marimo-glance-*.crx
+            apps/extension/output/marimo-glance-*-firefox.zip
+            apps/extension/output/marimo-glance-*-sources.zip
+          if-no-files-found: error

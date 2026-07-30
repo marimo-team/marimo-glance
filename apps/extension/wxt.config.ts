@@ -12,6 +12,9 @@ export default defineConfig({
   // `pnpm install` and reproduce the build. Zip from the repo root and drop
   // only generated artifacts (node_modules and dotfiles are excluded by default).
   zip: {
+    // Without this the archives are named after the package (`@marimo/extension`
+    // kebab-cased to `marimoextension`). Store reviewers download these by name.
+    name: "marimo-glance",
     sourcesRoot: "../..",
     excludeSources: ["**/dist/**", "**/output/**", "**/.wxt/**", "**/.turbo/**"],
   },
