@@ -55,6 +55,19 @@ export async function readEnabledHosts(): Promise<EnabledHosts> {
   return live;
 }
 
+/**
+ * The flavor stored for an origin, read without consulting the permissions API,
+ * which browsers do not expose to content scripts.
+ *
+ * Skipping the permission check is safe here: a content script only runs on a
+ * non-built-in origin because a registration created under a granted permission
+ * injected it, so the grant is implied by execution.
+ */
+export async function storedFlavor(origin: string): Promise<Flavor | null> {
+  const stored = await readStored();
+  return stored[origin] ?? null;
+}
+
 export async function saveEnabledHost(origin: string, flavor: Flavor): Promise<void> {
   const stored = await readStored();
   await browser.storage.local.set({
