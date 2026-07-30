@@ -91,6 +91,10 @@ the stores by hand. Tick **dry run** to exercise the whole pipeline without
 creating a tag or release — the artifacts are attached to the workflow run
 instead.
 
+The tag is created when the packages are built, not when they reach the stores.
+If a store rejects an upload, delete the tag and the draft release before
+re-running.
+
 The Chrome package is signed because the listing uses
 [Verified CRX Uploads](https://developer.chrome.com/blog/verified-uploads-cws):
 the dashboard checks the signature against a registered public key and rejects
