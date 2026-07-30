@@ -1,4 +1,22 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["local>marimo-team/.github:renovate-config"]
+  "extends": ["local>marimo-team/.github:renovate-config", "schedule:monthly"],
+  "minimumReleaseAge": "7 days",
+  "prConcurrentLimit": 3,
+  "prHourlyLimit": 0,
+  "abandonmentThreshold": null,
+  "lockFileMaintenance": {
+    "automerge": true
+  },
+  "vulnerabilityAlerts": {
+    "minimumReleaseAge": null,
+    "schedule": ["at any time"],
+    "labels": ["security"]
+  },
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["pin", "pinDigest", "digest", "patch", "minor"],
+      "automerge": true
+    }
+  ]
 }
