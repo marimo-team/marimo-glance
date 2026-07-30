@@ -15,62 +15,59 @@ const DEFAULT_LOAD_TIMEOUT_MS = 8000;
  * before it settles.
  */
 export function guardCsp(
-	notebook: HTMLElement,
-	restore: () => void,
-	timeoutMs: number = DEFAULT_LOAD_TIMEOUT_MS,
+  notebook: HTMLElement,
+  restore: () => void,
+  timeoutMs: number = DEFAULT_LOAD_TIMEOUT_MS,
 ): () => void {
-	const iframe = notebook.querySelector("iframe");
-	if (!iframe) return () => {};
+  const iframe = notebook.querySelector("iframe");
+  if (!iframe) return () => {};
 
-	let settled = false;
+  let settled = false;
 
-	const cleanup = () => {
-		clearTimeout(timer);
-		iframe.removeEventListener("load", onLoad);
-		document.removeEventListener("securitypolicyviolation", onViolation);
-	};
+  const cleanup = () => {
+    clearTimeout(timer);
+    iframe.removeEventListener("load", onLoad);
+    document.removeEventListener("securitypolicyviolation", onViolation);
+  };
 
-	const settle = (blockedReason?: string) => {
-		if (settled) return;
-		settled = true;
-		cleanup();
-		if (blockedReason) {
-			console.warn(
-				`[marimo-glance] playground iframe ${blockedReason}; restoring original view`,
-			);
-			restore();
-		}
-	};
+  const settle = (blockedReason?: string) => {
+    if (settled) return;
+    settled = true;
+    cleanup();
+    if (blockedReason) {
+      console.warn(`[marimo-glance] playground iframe ${blockedReason}; restoring original view`);
+      restore();
+    }
+  };
 
-	const onLoad = () => settle();
-	const onViolation = (event: SecurityPolicyViolationEvent) => {
-		if (isPlaygroundViolation(event)) settle("blocked by page CSP");
-	};
+  const onLoad = () => settle();
+  const onViolation = (event: SecurityPolicyViolationEvent) => {
+    if (isPlaygroundViolation(event)) settle("blocked by page CSP");
+  };
 
-	const timer = setTimeout(() => settle("failed to load"), timeoutMs);
-	iframe.addEventListener("load", onLoad);
-	document.addEventListener("securitypolicyviolation", onViolation);
+  const timer = setTimeout(() => settle("failed to load"), timeoutMs);
+  iframe.addEventListener("load", onLoad);
+  document.addEventListener("securitypolicyviolation", onViolation);
 
-	return () => {
-		if (!settled) {
-			settled = true;
-			cleanup();
-		}
-	};
+  return () => {
+    if (!settled) {
+      settled = true;
+      cleanup();
+    }
+  };
 }
 
 function isPlaygroundViolation(event: SecurityPolicyViolationEvent): boolean {
-	const directive = event.effectiveDirective || event.violatedDirective;
-	const framesBlocked =
-		directive.includes("frame-src") || directive.includes("child-src");
-	if (!framesBlocked) return false;
+  const directive = event.effectiveDirective || event.violatedDirective;
+  const framesBlocked = directive.includes("frame-src") || directive.includes("child-src");
+  if (!framesBlocked) return false;
 
-	// `blockedURI` can be a bare token ("about", "data", "eval") rather than a
-	// URL, so parse defensively and match the exact host — a substring test would
-	// also accept `marimo.app.attacker.com` or a path containing the string.
-	try {
-		return new URL(event.blockedURI).hostname === PLAYGROUND_HOST;
-	} catch {
-		return false;
-	}
+  // `blockedURI` can be a bare token ("about", "data", "eval") rather than a
+  // URL, so parse defensively and match the exact host — a substring test would
+  // also accept `marimo.app.attacker.com` or a path containing the string.
+  try {
+    return new URL(event.blockedURI).hostname === PLAYGROUND_HOST;
+  } catch {
+    return false;
+  }
 }

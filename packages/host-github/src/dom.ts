@@ -7,15 +7,15 @@ import type { Theme } from "@marimo/notebook-core";
  * intact.
  */
 export function findBlobAnchor(doc: Document): HTMLElement | null {
-	const textarea = doc.querySelector("#read-only-cursor-text-area");
-	return textarea?.closest("section") ?? null;
+  const textarea = doc.querySelector("#read-only-cursor-text-area");
+  return textarea?.closest("section") ?? null;
 }
 
 export interface GistFile {
-	/** The element to insert the notebook before and hide (the code body). */
-	anchor: HTMLElement;
-	/** Absolute URL of the file's raw source, read from its "Raw" link. */
-	rawUrl: string;
+  /** The element to insert the notebook before and hide (the code body). */
+  anchor: HTMLElement;
+  /** Absolute URL of the file's raw source, read from its "Raw" link. */
+  rawUrl: string;
 }
 
 /**
@@ -27,15 +27,13 @@ export interface GistFile {
  * link — stays visible above the notebook.
  */
 export function findGistPythonFile(doc: Document): GistFile | null {
-	for (const file of doc.querySelectorAll<HTMLElement>(".file")) {
-		const raw = file.querySelector<HTMLAnchorElement>('a[href*="/raw/"]');
-		if (!raw?.href.endsWith(".py")) continue;
-		const anchor =
-			file.querySelector<HTMLElement>(".blob-wrapper, .Box-body, .highlight") ??
-			file;
-		return { anchor, rawUrl: raw.href };
-	}
-	return null;
+  for (const file of doc.querySelectorAll<HTMLElement>(".file")) {
+    const raw = file.querySelector<HTMLAnchorElement>('a[href*="/raw/"]');
+    if (!raw?.href.endsWith(".py")) continue;
+    const anchor = file.querySelector<HTMLElement>(".blob-wrapper, .Box-body, .highlight") ?? file;
+    return { anchor, rawUrl: raw.href };
+  }
+  return null;
 }
 
 /**
@@ -43,6 +41,6 @@ export function findGistPythonFile(doc: Document): GistFile | null {
  * (or anything unexpected) maps to `system` so the runtime follows the OS.
  */
 export function readGitHubTheme(doc: Document): Theme {
-	const mode = doc.documentElement.dataset.colorMode;
-	return mode === "light" || mode === "dark" ? mode : "system";
+  const mode = doc.documentElement.dataset.colorMode;
+  return mode === "light" || mode === "dark" ? mode : "system";
 }

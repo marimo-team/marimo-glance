@@ -7,7 +7,7 @@ const GIST_HOST = "gist.github.com";
 const BLOB_ROUTE_INDEX = 2;
 
 function pathSegments(url: URL): string[] {
-	return url.pathname.split("/").filter(Boolean);
+  return url.pathname.split("/").filter(Boolean);
 }
 
 /**
@@ -17,11 +17,11 @@ function pathSegments(url: URL): string[] {
  * segment position so a repo literally named `blob` is not mistaken for one.
  */
 export function isBlobUrl(url: URL): boolean {
-	return (
-		url.hostname === BLOB_HOST &&
-		pathSegments(url)[BLOB_ROUTE_INDEX] === "blob" &&
-		isPythonPath(url.pathname)
-	);
+  return (
+    url.hostname === BLOB_HOST &&
+    pathSegments(url)[BLOB_ROUTE_INDEX] === "blob" &&
+    isPythonPath(url.pathname)
+  );
 }
 
 /**
@@ -32,9 +32,9 @@ export function isBlobUrl(url: URL): boolean {
  * directory in the file path survives.
  */
 export function blobRawUrl(url: URL): string {
-	const segments = pathSegments(url);
-	segments[BLOB_ROUTE_INDEX] = "raw";
-	return `${url.origin}/${segments.join("/")}`;
+  const segments = pathSegments(url);
+  segments[BLOB_ROUTE_INDEX] = "raw";
+  return `${url.origin}/${segments.join("/")}`;
 }
 
 /**
@@ -45,8 +45,8 @@ export function blobRawUrl(url: URL): string {
  * previews and would otherwise be injected into.
  */
 export function isGistUrl(url: URL): boolean {
-	if (url.hostname !== GIST_HOST) return false;
-	const segments = pathSegments(url);
-	if (segments.length < 1 || segments.length > 2) return false;
-	return /^[0-9a-f]+$/i.test(segments[segments.length - 1]);
+  if (url.hostname !== GIST_HOST) return false;
+  const segments = pathSegments(url);
+  if (segments.length < 1 || segments.length > 2) return false;
+  return /^[0-9a-f]+$/i.test(segments[segments.length - 1]);
 }

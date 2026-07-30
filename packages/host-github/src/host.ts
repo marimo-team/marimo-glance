@@ -1,10 +1,6 @@
 import type { Host } from "@marimo/notebook-core";
 import { fetchText } from "@marimo/notebook-core";
-import {
-	findBlobAnchor,
-	findGistPythonFile,
-	readGitHubTheme,
-} from "./dom.js";
+import { findBlobAnchor, findGistPythonFile, readGitHubTheme } from "./dom.js";
 import { blobRawUrl, isBlobUrl, isGistUrl } from "./urls.js";
 
 /**
@@ -15,26 +11,26 @@ import { blobRawUrl, isBlobUrl, isGistUrl } from "./urls.js";
  * simply the code element to insert before and hide.
  */
 export const githubHost: Host = {
-	id: "github",
+  id: "github",
 
-	matches(url) {
-		return isBlobUrl(url) || isGistUrl(url);
-	},
+  matches(url) {
+    return isBlobUrl(url) || isGistUrl(url);
+  },
 
-	getSource(url) {
-		if (isBlobUrl(url)) return fetchText(blobRawUrl(url));
-		const file = findGistPythonFile(document);
-		return file ? fetchText(file.rawUrl) : Promise.resolve(null);
-	},
+  getSource(url) {
+    if (isBlobUrl(url)) return fetchText(blobRawUrl(url));
+    const file = findGistPythonFile(document);
+    return file ? fetchText(file.rawUrl) : Promise.resolve(null);
+  },
 
-	findAnchor() {
-		const url = new URL(window.location.href);
-		if (isBlobUrl(url)) return findBlobAnchor(document);
-		if (isGistUrl(url)) return findGistPythonFile(document)?.anchor ?? null;
-		return null;
-	},
+  findAnchor() {
+    const url = new URL(window.location.href);
+    if (isBlobUrl(url)) return findBlobAnchor(document);
+    if (isGistUrl(url)) return findGistPythonFile(document)?.anchor ?? null;
+    return null;
+  },
 
-	readTheme() {
-		return readGitHubTheme(document);
-	},
+  readTheme() {
+    return readGitHubTheme(document);
+  },
 };

@@ -10,10 +10,10 @@ import type { Theme } from "@marimo/notebook-core";
  * intermediate markup shifts; the content element itself is the fallback.
  */
 export function findBlobAnchor(doc: Document): HTMLElement | null {
-	const content = doc.querySelector<HTMLElement>(
-		"[data-testid='blob-viewer-file-content'], .file-content, .blob-content",
-	);
-	return content?.closest<HTMLElement>(".blob-viewer") ?? content ?? null;
+  const content = doc.querySelector<HTMLElement>(
+    "[data-testid='blob-viewer-file-content'], .file-content, .blob-content",
+  );
+  return content?.closest<HTMLElement>(".blob-viewer") ?? content ?? null;
 }
 
 /**
@@ -23,11 +23,8 @@ export function findBlobAnchor(doc: Document): HTMLElement | null {
  * other than an explicit dark/light class maps to `system`.
  */
 export function readGitLabTheme(doc: Document): Theme {
-	const classes = new Set([
-		...doc.documentElement.classList,
-		...doc.body.classList,
-	]);
-	if (classes.has("gl-dark")) return "dark";
-	if (classes.has("gl-light")) return "light";
-	return "system";
+  const classes = new Set([...doc.documentElement.classList, ...doc.body.classList]);
+  if (classes.has("gl-dark")) return "dark";
+  if (classes.has("gl-light")) return "light";
+  return "system";
 }

@@ -1,4 +1,9 @@
+import SupportBanner from "./SupportBanner";
+import { useSiteSupport } from "./useSiteSupport";
+
 export default function App() {
+  const support = useSiteSupport();
+
   return (
     <div>
       <div className="flex items-center gap-2.5">
@@ -8,8 +13,11 @@ export default function App() {
       <p className="mt-3 text-muted-foreground">
         See your marimo notebooks at a glance. Run them live on GitHub and gists, right in the page.
       </p>
+      <div className="mt-3">
+        <SupportBanner support={support} />
+      </div>
       <div className="mt-3 rounded-lg border py-2.5 pr-3 pl-3.5">
-        <h2 className="mb-1.5 text-xs font-semibold tracking-[0.04em] uppercase text-muted-foreground">
+        <h2 className="mb-1.5 text-xs font-semibold tracking-[0.04em] text-muted-foreground uppercase">
           How to use
         </h2>
         <ol className="list-decimal pl-4.5">

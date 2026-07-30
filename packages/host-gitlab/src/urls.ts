@@ -9,11 +9,9 @@ const BLOB_HOST = "gitlab.com";
  * Only these carry a single file whose raw source can be derived from the URL.
  */
 export function isBlobUrl(url: URL): boolean {
-	return (
-		url.hostname === BLOB_HOST &&
-		url.pathname.includes("/-/blob/") &&
-		isPythonPath(url.pathname)
-	);
+  return (
+    url.hostname === BLOB_HOST && url.pathname.includes("/-/blob/") && isPythonPath(url.pathname)
+  );
 }
 
 /**
@@ -24,5 +22,5 @@ export function isBlobUrl(url: URL): boolean {
  * disambiguates a branch from a same-named tag — dropping it fetches the wrong ref.
  */
 export function blobRawUrl(url: URL): string {
-	return `${url.origin}${url.pathname.replace("/-/blob/", "/-/raw/")}${url.search}`;
+  return `${url.origin}${url.pathname.replace("/-/blob/", "/-/raw/")}${url.search}`;
 }

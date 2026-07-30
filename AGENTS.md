@@ -41,10 +41,10 @@ A host bridges the page's DOM and source. Implement it to add a new platform:
 ```typescript
 interface Host {
   id: string;
-  matches(url: URL): boolean;          // Does this page belong to us?
-  getSource(url: URL): Promise<string | null>;  // Fetch .py source
-  findAnchor(): HTMLElement | null;    // Original code element (insert before, hide)
-  readTheme?(): Theme;                 // Optional: detect page theme (light/dark/system)
+  matches(url: URL): boolean; // Does this page belong to us?
+  getSource(url: URL): Promise<string | null>; // Fetch .py source
+  findAnchor(): HTMLElement | null; // Original code element (insert before, hide)
+  readTheme?(): Theme; // Optional: detect page theme (light/dark/system)
 }
 ```
 
@@ -98,12 +98,14 @@ Per-package scripts (e.g., `cd packages/notebook-core && pnpm build`) work too, 
 - **Extension:** WXT 0.20.27 (esbuild bundler, MV3 for Chrome, MV2 for Firefox)
 
 Per-package structure:
+
 - `src/index.ts`: public exports
 - `src/*.ts`: implementation
 - `test/*.test.mjs`: tests (ESM, run with `node --test`)
 - `tsconfig.json`: package config (extends `../tsconfig.base.json`)
 
 Extension build outputs:
+
 - `apps/extension/output/chrome-mv3/`: Chrome production build
 - `apps/extension/output/firefox-mv2/`: Firefox production build
 - WXT generates `apps/extension/.wxt/` during build (gitignored)
@@ -133,6 +135,7 @@ node --test test/*.test.mjs    # ✓ sandboxed
 5. **Dev mode:** `pnpm dev` (WXT watches extension, tsc watches packages)
 
 For manual testing:
+
 - `pnpm build` to produce a production build
 - Load `apps/extension/output/chrome-mv3/` as an unpacked extension in Chrome dev mode (chrome://extensions)
 - Or `pnpm dev` to auto-reload during development

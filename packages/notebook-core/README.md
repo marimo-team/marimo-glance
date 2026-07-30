@@ -23,8 +23,8 @@ interface Host {
   id: string;
   matches(url: URL): boolean;
   getSource(url: URL): Promise<string | null>;
-  findAnchor(): HTMLElement | null;   // the page's original code element
-  readTheme?(): Theme;                 // optional: read the page's theme
+  findAnchor(): HTMLElement | null; // the page's original code element
+  readTheme?(): Theme; // optional: read the page's theme
 }
 ```
 
