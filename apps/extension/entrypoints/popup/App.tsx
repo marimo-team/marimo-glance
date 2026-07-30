@@ -2,7 +2,7 @@ import SupportBanner from "./SupportBanner";
 import { useSiteSupport } from "./useSiteSupport";
 
 export default function App() {
-  const support = useSiteSupport();
+  const { support, refresh } = useSiteSupport();
 
   return (
     <div>
@@ -14,7 +14,7 @@ export default function App() {
         See your marimo notebooks at a glance. Run them live on GitHub and gists, right in the page.
       </p>
       <div className="mt-3">
-        <SupportBanner support={support} />
+        <SupportBanner support={support} onChange={refresh} />
       </div>
       <div className="mt-3 rounded-lg border py-2.5 pr-3 pl-3.5">
         <h2 className="mb-1.5 text-xs font-semibold tracking-[0.04em] text-muted-foreground uppercase">
