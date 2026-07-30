@@ -24,9 +24,14 @@ test("isBlobUrl rejects tree and raw paths", () => {
   assert.equal(isBlobUrl(new URL("https://gitlab.com/o/r/-/raw/main/nb.py")), false);
 });
 
-test("isBlobUrl rejects other hosts, including github blobs", () => {
+test("isBlobUrl accepts a self-hosted instance on any hostname", () => {
+  assert.equal(isBlobUrl(new URL("https://gitlab.example.com/o/r/-/blob/main/nb.py")), true);
+  assert.equal(isBlobUrl(new URL("https://code.company.internal/g/sg/r/-/blob/main/nb.py")), true);
+});
+
+test("isBlobUrl rejects a GitHub-shaped blob path, which has no /-/ delimiter", () => {
   assert.equal(isBlobUrl(new URL("https://github.com/o/r/blob/main/nb.py")), false);
-  assert.equal(isBlobUrl(new URL("https://gitlab.example.com/o/r/-/blob/main/nb.py")), false);
+  assert.equal(isBlobUrl(new URL("https://gitlab.example.com/o/r/blob/main/nb.py")), false);
 });
 
 test("blobRawUrl swaps /-/blob/ for /-/raw/ and keeps the origin", () => {

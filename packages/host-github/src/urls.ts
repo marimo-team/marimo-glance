@@ -1,6 +1,5 @@
 import { isPythonPath } from "@marimo/notebook-core";
 
-const BLOB_HOST = "github.com";
 const GIST_HOST = "gist.github.com";
 
 /** The `blob` route verb sits at a fixed depth: `/owner/repo/blob/ref/...`. */
@@ -15,13 +14,13 @@ function pathSegments(url: URL): string[] {
  * `/owner/repo/blob/ref/path/to/file.py`; only these carry a single file whose
  * raw source can be derived from the URL alone. The route verb is matched by its
  * segment position so a repo literally named `blob` is not mistaken for one.
+ *
+ * The hostname is deliberately not checked: GitHub Enterprise instances live on
+ * arbitrary hostnames, and which origins may be touched at all is decided by the
+ * extension's host permissions rather than by this predicate.
  */
 export function isBlobUrl(url: URL): boolean {
-  return (
-    url.hostname === BLOB_HOST &&
-    pathSegments(url)[BLOB_ROUTE_INDEX] === "blob" &&
-    isPythonPath(url.pathname)
-  );
+  return pathSegments(url)[BLOB_ROUTE_INDEX] === "blob" && isPythonPath(url.pathname);
 }
 
 /**

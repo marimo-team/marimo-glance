@@ -6,7 +6,7 @@ import { installDom, seedBlobPage, seedGistPage, stubFetch } from "./dom.mjs";
 
 const MARIMO = "import marimo\n\napp = marimo.App()\n";
 
-test("matches blob .py views and gist pages, nothing else", () => {
+test("matches blob .py views by path shape and gist.github.com pages", () => {
   assert.equal(githubHost.matches(new URL("https://github.com/o/r/blob/main/nb.py")), true);
   assert.equal(githubHost.matches(new URL("https://gist.github.com/o/abc123")), true);
   assert.equal(githubHost.matches(new URL("https://github.com/o/r/blob/main/x.md")), false);

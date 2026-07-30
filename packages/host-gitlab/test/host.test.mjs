@@ -6,7 +6,7 @@ import { installDom, seedBlobPage, stubFetch } from "./dom.mjs";
 
 const MARIMO = "import marimo\n\napp = marimo.App()\n";
 
-test("matches gitlab.com blob .py views, nothing else", () => {
+test("matches blob .py views by path shape, on any hostname", () => {
   assert.equal(gitlabHost.matches(new URL("https://gitlab.com/g/sg/r/-/blob/main/nb.py")), true);
   assert.equal(gitlabHost.matches(new URL("https://gitlab.com/o/r/-/blob/main/x.md")), false);
   assert.equal(gitlabHost.matches(new URL("https://gitlab.com/o/r")), false);

@@ -15,9 +15,14 @@ test("isBlobUrl rejects tree and non-blob paths", () => {
   assert.equal(isBlobUrl(new URL("https://github.com/o/r/tree/main/pkg")), false);
 });
 
-test("isBlobUrl rejects other hosts, including gist and raw", () => {
-  assert.equal(isBlobUrl(new URL("https://gitlab.com/o/r/blob/main/nb.py")), false);
-  assert.equal(isBlobUrl(new URL("https://gist.github.com/o/abc123/blob/main/nb.py")), false);
+test("isBlobUrl accepts a GitHub Enterprise instance on any hostname", () => {
+  assert.equal(isBlobUrl(new URL("https://github.company.com/o/r/blob/main/nb.py")), true);
+  assert.equal(isBlobUrl(new URL("https://code.internal/o/r/blob/main/nb.py")), true);
+});
+
+test("isBlobUrl rejects a GitLab-shaped blob path, where /-/ shifts the route segment", () => {
+  assert.equal(isBlobUrl(new URL("https://gitlab.com/o/r/-/blob/main/nb.py")), false);
+  assert.equal(isBlobUrl(new URL("https://code.internal/o/r/-/blob/main/nb.py")), false);
 });
 
 test("blobRawUrl swaps /blob/ for /raw/ and keeps the origin", () => {
