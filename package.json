@@ -16,10 +16,10 @@
     "pack:crx": "bash scripts/pack-crx.sh"
   },
   "devDependencies": {
-    "oxfmt": "0.60.0",
-    "oxlint": "1.74.0",
-    "turbo": "2.10.5",
+    "oxfmt": "0.62.0",
+    "oxlint": "1.77.0",
+    "turbo": "2.10.8",
     "typescript": "7.0.2"
   },
-  "packageManager": "pnpm@11.15.0"
+  "packageManager": "pnpm@11.20.0"
 }
