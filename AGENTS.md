@@ -54,7 +54,7 @@ The extension passes the host to `createRuntime(host)`, which handles detection,
 
 ### `@marimo/notebook-core`
 
-- `isMarimoNotebook(source)`: detect marimo notebook from first 4096 chars
+- `isMarimoNotebook(source)`: detect marimo notebook from first 16 KB
 - `isPythonPath(path)`: check if path ends `.py`
 - `playgroundUrl(source, opts?)`: compress notebook, return marimo.app URL with `embed=true`
 - `renderNotebookAsIframe(source, opts?)`: build iframe DOM subtree

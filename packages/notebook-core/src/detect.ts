@@ -61,13 +61,15 @@ function stripStringsAndComments(source: string): string {
   return result;
 }
 
+const DETECT_MAX_SIZE = 16_384;
+
 export function isPythonPath(path: string): boolean {
   return path.endsWith(".py");
 }
 
 export function isMarimoNotebook(source: string): boolean {
   const aliases = new Set([DEFAULT_ALIAS]);
-  const header = stripStringsAndComments(source.slice(0, 4096));
+  const header = stripStringsAndComments(source.slice(0, DETECT_MAX_SIZE));
 
   for (const line of header.split(/\r?\n/)) {
     if (line.startsWith(" ") || line.startsWith("\t")) {

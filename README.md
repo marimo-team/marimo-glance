@@ -15,7 +15,7 @@ marimo notebooks are just Python files, so GitHub and gists show them as source 
 
 ## How it works
 
-The extension watches the pages you open on GitHub and gists. On a `.py` file it reads the source and looks for a real top-level `app = marimo.App(...)` declaration (whitespace and a type annotation are fine, and it honors `import marimo as <alias>`), scanning only the first 4 KB. A passing mention of marimo in a comment, a string, or a nested function doesn't count, so ordinary Python files are left completely alone.
+The extension watches the pages you open on GitHub and gists. On a `.py` file it reads the source and looks for a real top-level `app = marimo.App(...)` declaration (whitespace and a type annotation are fine, and it honors `import marimo as <alias>`), scanning the first 16 KB and stopping as soon as it finds a match. A passing mention of marimo in a comment, a string, or a nested function doesn't count, so ordinary Python files are left completely alone.
 
 When it does find a notebook, it drops the **"Switch to interactive marimo notebook"** button in the bottom-right corner. Clicking it boots the notebook live through [marimo.app](https://marimo.app), running entirely in WebAssembly inside your browser, right where the code was. **"See original"** flips back to the raw source, and switching between the two never restarts the notebook once it is running.
 
