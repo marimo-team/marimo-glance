@@ -6,7 +6,7 @@ Keeping it this clean is the point: it could just as easily back a different too
 
 ## What you can import
 
-- `isMarimoNotebook(source)` tells you whether some Python source is a marimo notebook. It looks for a real top-level `app = marimo.App(...)` (whitespace and a type annotation are fine, and it honors an `import marimo as <alias>`) within the first 4 KB. A stray mention of marimo in a comment, a string, or a nested function won't fool it.
+- `isMarimoNotebook(source)` tells you whether some Python source is a marimo notebook. It looks for a real top-level `app = marimo.App(...)` (whitespace and a type annotation are fine, and it honors an `import marimo as <alias>`) within the first 16 KB, returning as soon as it finds a match. A stray mention of marimo in a comment, a string, or a nested function won't fool it.
 - `isPythonPath(path)` is the obvious `.py` check.
 - `playgroundUrl(source, { ref?, theme? })` builds the marimo.app embed URL, compressing the notebook into the `#code/` hash.
 - `renderNotebookAsIframe(source, options)` gives you the notebook iframe as a DOM node.

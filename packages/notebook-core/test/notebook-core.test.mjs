@@ -77,6 +77,24 @@ test("ignores an aliased import after the first 4 KiB", () => {
   assert.equal(isMarimoNotebook(source), true);
 });
 
+test("recognizes a notebook whose app declaration is after the first 4 KiB", () => {
+  const source = `"""${"x".repeat(4096)}"""\nimport marimo\napp = marimo.App()\n`;
+
+  assert.equal(isMarimoNotebook(source), true);
+});
+
+test("recognizes a notebook whose app declaration is after 12 KiB", () => {
+  const source = `"""${"x".repeat(12_000)}"""\nimport marimo\napp = marimo.App()\n`;
+
+  assert.equal(isMarimoNotebook(source), true);
+});
+
+test("does not scan past 16 KiB", () => {
+  const source = `"""${"x".repeat(16_384)}"""\nimport marimo\napp = marimo.App()\n`;
+
+  assert.equal(isMarimoNotebook(source), false);
+});
+
 test("identifies Python paths by extension", () => {
   assert.equal(isPythonPath("notebooks/demo.py"), true);
   assert.equal(isPythonPath("README.md"), false);
