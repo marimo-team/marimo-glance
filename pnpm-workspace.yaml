@@ -8,4 +8,10 @@ allowBuilds:
 # releases are typically caught and unpublished within hours, so the delay
 # filters most package-poisoning attacks. Applies to transitive dependencies
 # and manual `pnpm add`, which Renovate's own minimumReleaseAge cannot cover.
-minimumReleaseAge: 10080
+minimumReleaseAge: 20160
+verifyDepsBeforeRun: install
+blockExoticSubdeps: true
+trustPolicy: no-downgrade
+minimumReleaseAgeExclude:
+  - "@marimo-team/*"
+onlyBuiltDependencies: []
