@@ -16,7 +16,7 @@ permissions: {}
 jobs:
   release:
     name: Build, sign & draft release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-p-small
     # Gates the signing key behind a required reviewer, so it is only readable
     # from a run that was explicitly approved.
     environment: release
