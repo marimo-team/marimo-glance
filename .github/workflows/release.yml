@@ -16,7 +16,7 @@ permissions: {}
 jobs:
   release:
     name: Build, sign & draft release
-    runs-on: ubuntu-p-small
+    runs-on: "${{ vars.CI_RUNNER_SMALL || 'ubuntu-latest' }}"
     # Gates the signing key behind a required reviewer, so it is only readable
     # from a run that was explicitly approved.
     environment: release
