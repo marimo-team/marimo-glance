@@ -10,6 +10,7 @@ packages/
   extension-runtime/    Reconcile-on-observe controller + switching UI
   host-github/          GitHub.com + gist.github.com implementation
   host-gitlab/          GitLab.com implementation
+  host-colab/           Colab notebook link-out (no inline rendering)
 apps/
   extension/            WXT browser extension (Chrome + Firefox)
 ```
@@ -76,6 +77,22 @@ The extension passes the host to `createRuntime(host)`, which handles detection,
   - Gist: source + anchor from DOM (first `.py` file)
   - `readTheme()` from `<html data-color-mode>`
 - Helpers: `isBlobUrl()`, `isGistUrl()`, `blobRawUrl()`, `findBlobAnchor()`, `findGistPythonFile()`, `readGitHubTheme()`
+
+## Link-outs: notebooks we do not render
+
+Jupyter `.ipynb` notebooks (public github.com blobs, GitHub-backed Colab pages) are not rendered in place. molab imports them from their public URL and converts them to marimo server-side, so the extension only offers a dismissable "Open in molab" pill. This is a separate concept from `Host`:
+
+```typescript
+interface NotebookLink {
+  id: string;
+  sourceUrl(url: URL): string | null; // public URL molab imports, or null
+}
+```
+
+- `createLinkOut(link, { dismissals })` (in `extension-runtime`) is the reconcile-on-observe controller; `molabUrl()` in `notebook-core` builds the link.
+- The pill's × offers two scopes: hide this notebook, or hide on the whole site. Dismissals go through a `DismissalStore` injected by the extension (`storage.local`), keeping the runtime free of browser APIs; the popup can restore a hidden site.
+- A surface in `apps/extension/entrypoints/content.ts` can have a `host`, a `link`, or both (github has both).
+- Drive-backed Colab notebooks are skipped: they are private by default, which molab cannot fetch.
 
 ## Commands
 
@@ -158,7 +175,7 @@ That's it: no changes to the runtime or core.
 
 ## Notes
 
-- The extension's content script runs on `github.com/*`, `gist.github.com/*`, and `gitlab.com/*` only (see `apps/extension/wxt.config.ts`)
+- The extension's content script runs on `github.com/*`, `gist.github.com/*`, `gitlab.com/*`, and `colab.research.google.com/*` only (see `apps/extension/wxt.config.ts`)
 - Hosts share the runtime's floating UI switcher (notebook ↔ original code), theme detection, CSP fallback, and reconcile-on-observe logic
 - GitLab host is implemented (`gitlab.com` blobs), fetching raw source same-origin using the user's session
 - Playground ref is `marimo-glance:<surface>` (e.g., `marimo-glance:github`, `marimo-glance:gist`)

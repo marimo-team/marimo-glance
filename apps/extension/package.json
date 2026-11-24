@@ -17,8 +17,10 @@
   },
   "dependencies": {
     "@marimo/extension-runtime": "workspace:*",
+    "@marimo/host-colab": "workspace:*",
     "@marimo/host-github": "workspace:*",
     "@marimo/host-gitlab": "workspace:*",
+    "@marimo/notebook-core": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.26.0",

@@ -1,6 +1,7 @@
 /**
  * The sites marimo Glance runs on, each mapped to the surface name that
- * identifies it in playground provenance refs. github.com and gist.github.com
+ * identifies it in playground provenance refs (Colab has no playground, so its
+ * surface only selects what the content script mounts). github.com and gist.github.com
  * are separate origins served by one host implementation, so they are separate
  * entries with distinct surfaces.
  */
@@ -8,9 +9,26 @@ export const SUPPORTED_SITES = {
   "github.com": "github",
   "gist.github.com": "gist",
   "gitlab.com": "gitlab",
+  "colab.research.google.com": "colab",
 } as const;
 
 export type Surface = (typeof SUPPORTED_SITES)[keyof typeof SUPPORTED_SITES];
+
+/**
+ * What the extension does on each built-in surface, for the popup's summary.
+ * `marimo` runs `.py` notebooks in the page; `jupyter` offers `.ipynb` to molab.
+ */
+export interface SurfaceCapabilities {
+  marimo: boolean;
+  jupyter: boolean;
+}
+
+export const SURFACE_CAPABILITIES: Record<Surface, SurfaceCapabilities> = {
+  github: { marimo: true, jupyter: true },
+  gist: { marimo: true, jupyter: false },
+  gitlab: { marimo: true, jupyter: false },
+  colab: { marimo: false, jupyter: true },
+};
 
 export const PAGE_MATCHES = Object.keys(SUPPORTED_SITES).map((hostname) => `*://${hostname}/*`);
 

@@ -20,7 +20,8 @@ export default defineConfig({
   },
   manifest: ({ browser }) => ({
     name: "marimo Glance",
-    description: "See marimo notebooks at a glance: run them live, inline on GitHub and gists.",
+    description:
+      "See marimo notebooks at a glance: run them live on GitHub, gists and GitLab, or open Jupyter notebooks in molab.",
     host_permissions: HOST_PERMISSIONS,
     // `storage` holds the origin→flavor map for user-enabled hosts.
     // `scripting` registers and injects the content script on those origins,

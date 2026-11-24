@@ -1,21 +1,32 @@
-import { createRuntime } from "@marimo/extension-runtime";
-import { githubHost } from "@marimo/host-github";
+import { createLinkOut, createRuntime } from "@marimo/extension-runtime";
+import { colabNotebookLink } from "@marimo/host-colab";
+import { githubHost, githubNotebookLink } from "@marimo/host-github";
 import { gitlabHost } from "@marimo/host-gitlab";
+import type { Host, NotebookLink } from "@marimo/notebook-core";
 import { storedFlavor } from "../enabled-hosts";
 import { PAGE_MATCHES, supportedSite, type Surface } from "../hosts";
+import { linkOutDismissals } from "../link-out-dismissals";
 
-// github.com, gist.github.com, and gitlab.com are separate origins, so a page
-// load never crosses between them — the host is fixed for this instance's
-// lifetime. github.com and gist.github.com share one host but send distinct
-// ref tags.
+interface SurfaceConfig {
+  /** Renders marimo notebooks in place of the page's source. */
+  host?: Host;
+  /** Offers Jupyter notebooks on the page as a way out to molab. */
+  link?: NotebookLink;
+}
+
+// github.com, gist.github.com, gitlab.com, and colab.research.google.com are
+// separate origins, so a page load never crosses between them — the surface is
+// fixed for this instance's lifetime. github.com and gist.github.com share one
+// host but send distinct ref tags.
 //
-// `satisfies` makes a surface with no host a type error, so adding a site to
-// SUPPORTED_SITES cannot leave it silently unhandled here.
-const HOSTS = {
-  github: githubHost,
-  gist: githubHost,
-  gitlab: gitlabHost,
-} satisfies Record<Surface, unknown>;
+// The `Record<Surface, ...>` type makes a surface with no entry a type error, so
+// adding a site to SUPPORTED_SITES cannot leave it silently unhandled here.
+const SURFACES: Record<Surface, SurfaceConfig> = {
+  github: { host: githubHost, link: githubNotebookLink },
+  gist: { host: githubHost },
+  gitlab: { host: gitlabHost },
+  colab: { link: colabNotebookLink },
+};
 
 /**
  * The surface for this page: a built-in site, or the flavor the user declared
@@ -43,12 +54,18 @@ export default defineContentScript({
     // extension reloaded while it was in flight.
     if (ctx.isInvalid) return;
 
+    const { host, link } = SURFACES[surface];
+
     // The ref tag is a published attribution string, disclosed in PRIVACY.md and
     // counted by the marimo team. Changing its spelling breaks that reporting.
-    const runtime = createRuntime(HOSTS[surface], {
-      ref: `marimo-glance:${surface}`,
+    const runtimes = [
+      host && createRuntime(host, { ref: `marimo-glance:${surface}` }),
+      link && createLinkOut(link, { dismissals: linkOutDismissals }),
+    ].filter((runtime) => runtime !== undefined);
+
+    for (const runtime of runtimes) runtime.start();
+    ctx.onInvalidated(() => {
+      for (const runtime of runtimes) runtime.stop();
     });
-    runtime.start();
-    ctx.onInvalidated(() => runtime.stop());
   },
 });

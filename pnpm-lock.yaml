@@ -26,12 +26,18 @@ importers:
       '@marimo/extension-runtime':
         specifier: workspace:*
         version: link:../../packages/extension-runtime
+      '@marimo/host-colab':
+        specifier: workspace:*
+        version: link:../../packages/host-colab
       '@marimo/host-github':
         specifier: workspace:*
         version: link:../../packages/host-github
       '@marimo/host-gitlab':
         specifier: workspace:*
         version: link:../../packages/host-gitlab
+      '@marimo/notebook-core':
+        specifier: workspace:*
+        version: link:../../packages/notebook-core
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -91,6 +97,12 @@ importers:
       jsdom:
         specifier: 29.1.1
         version: 29.1.1
+
+  packages/host-colab:
+    dependencies:
+      '@marimo/notebook-core':
+        specifier: workspace:*
+        version: link:../notebook-core
 
   packages/host-github:
     dependencies:
@@ -2731,6 +2743,7 @@ packages:
   eslint@9.39.4:
     resolution: {integrity: sha512-XoMjdBOwe/esVgEvLmNsD3IRHkm7fbKIUGvrleloJXUZgDHig2IPWNniv+GwjyJXzuNqVjlr5+4yVUZjycJwfQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -3062,6 +3075,7 @@ packages:
   image-size@2.0.2:
     resolution: {integrity: sha512-IRqXKlaXwgSMAMtpNzZa1ZAe8m+Sa1770Dhk8VkSsP9LS+iHD62Zd8FQKs8fbPiagBE7BzoFX23cxFnwshpV6w==}
     engines: {node: '>=16.x'}
+    deprecated: Use latest 2.x please
     hasBin: true
 
   immediate@3.0.6:
