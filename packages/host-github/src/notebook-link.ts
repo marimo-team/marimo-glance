@@ -1,11 +1,21 @@
 import type { NotebookLink } from "@marimo/notebook-core";
-import { isNotebookBlobUrl } from "./urls.js";
+import { isPublicRepoPage } from "./dom.js";
+import { isIpynbBlobUrl } from "./urls.js";
 
-/** A Jupyter notebook on github.com, which molab imports straight from the blob URL. */
+const GITHUB_HOST = "github.com";
+
+/**
+ * A Jupyter notebook in a public github.com repository, which molab imports
+ * straight from the blob URL. GitHub Enterprise and private repositories are
+ * skipped: molab cannot fetch them, so the offer would only send their names
+ * to molab for nothing.
+ */
 export const githubNotebookLink: NotebookLink = {
   id: "github-ipynb",
 
   sourceUrl(url) {
-    return isNotebookBlobUrl(url) ? `${url.origin}${url.pathname}` : null;
+    const importable =
+      url.hostname === GITHUB_HOST && isIpynbBlobUrl(url) && isPublicRepoPage(document);
+    return importable ? `${url.origin}${url.pathname}` : null;
   },
 };

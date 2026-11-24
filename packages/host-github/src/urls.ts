@@ -1,6 +1,5 @@
 import { isIpynbPath, isPythonPath } from "@marimo/notebook-core";
 
-const GITHUB_HOST = "github.com";
 const GIST_HOST = "gist.github.com";
 
 /** The `blob` route verb sits at a fixed depth: `/owner/repo/blob/ref/...`. */
@@ -24,13 +23,9 @@ export function isBlobUrl(url: URL): boolean {
   return hasBlobRoute(url) && isPythonPath(url.pathname);
 }
 
-/**
- * A github.com file view for a Jupyter notebook. Unlike `isBlobUrl` this pins
- * the hostname: molab imports from public github.com, so a GitHub Enterprise
- * notebook it cannot fetch must not be offered.
- */
-export function isNotebookBlobUrl(url: URL): boolean {
-  return url.hostname === GITHUB_HOST && hasBlobRoute(url) && isIpynbPath(url.pathname);
+/** A GitHub file view for a Jupyter notebook, by the same route shape as `isBlobUrl`. */
+export function isIpynbBlobUrl(url: URL): boolean {
+  return hasBlobRoute(url) && isIpynbPath(url.pathname);
 }
 
 function hasBlobRoute(url: URL): boolean {

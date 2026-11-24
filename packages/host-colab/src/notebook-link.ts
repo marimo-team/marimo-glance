@@ -8,10 +8,11 @@ const GITHUB_ROUTE = "github";
 const BLOB_ROUTE_INDEX = 3;
 
 /**
- * A Colab notebook backed by a public GitHub file. Drive-backed notebooks
- * (`/drive/<id>`) are skipped: they are private by default, so molab could not
- * fetch most of them and the offer would mostly dead-end. molab resolves the
- * Colab URL itself, so it is passed through untouched.
+ * A Colab notebook backed by a GitHub file. molab resolves the Colab URL itself,
+ * so it is passed through untouched. Drive-backed notebooks (`/drive/<id>`) are
+ * skipped: they are private by default, so the offer would mostly dead-end.
+ * A private GitHub repo opened through Colab cannot be told apart from a public
+ * one without a request, so the pill still shows there and molab's import fails.
  */
 export const colabNotebookLink: NotebookLink = {
   id: "colab",

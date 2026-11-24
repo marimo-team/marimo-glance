@@ -65,17 +65,34 @@ test("readTheme maps GitHub's color-mode attribute, defaulting to system", () =>
   assert.equal(githubHost.readTheme(), "system");
 });
 
-test("githubNotebookLink yields the blob URL without query or hash", () => {
-  assert.equal(
-    githubNotebookLink.sourceUrl(new URL("https://github.com/o/r/blob/main/a/nb.ipynb?plain=1#L3")),
-    "https://github.com/o/r/blob/main/a/nb.ipynb",
-  );
+/** A github.com page whose repo-visibility meta tag reads `visibility`, or has none. */
+function installRepoPage(url, visibility) {
+  const dom = installDom(url);
+  if (visibility !== undefined) {
+    const meta = dom.window.document.createElement("meta");
+    meta.name = "octolytics-dimension-repository_public";
+    meta.content = String(visibility === "public");
+    dom.window.document.head.append(meta);
+  }
+  return dom;
+}
+
+const IPYNB_URL = "https://github.com/o/r/blob/main/a/nb.ipynb";
+
+test("githubNotebookLink yields a public notebook's blob URL without query or hash", () => {
+  installRepoPage(`${IPYNB_URL}?plain=1#L3`, "public");
+  assert.equal(githubNotebookLink.sourceUrl(new URL(location.href)), IPYNB_URL);
 });
 
-test("githubNotebookLink ignores pages that are not github.com notebooks", () => {
-  assert.equal(
-    githubNotebookLink.sourceUrl(new URL("https://github.com/o/r/blob/main/nb.py")),
-    null,
-  );
-  assert.equal(githubNotebookLink.sourceUrl(new URL("https://gist.github.com/o/abc123")), null);
+test("githubNotebookLink skips private repos, and pages that do not say", () => {
+  installRepoPage(IPYNB_URL, "private");
+  assert.equal(githubNotebookLink.sourceUrl(new URL(location.href)), null);
+
+  installRepoPage(IPYNB_URL, undefined);
+  assert.equal(githubNotebookLink.sourceUrl(new URL(location.href)), null);
+});
+
+test("githubNotebookLink skips GitHub Enterprise, which molab cannot fetch", () => {
+  installRepoPage("https://github.company.com/o/r/blob/main/nb.ipynb", "public");
+  assert.equal(githubNotebookLink.sourceUrl(new URL(location.href)), null);
 });

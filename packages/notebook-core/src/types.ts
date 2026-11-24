@@ -32,9 +32,9 @@ export interface Host {
 export interface NotebookLink {
   id: string;
   /**
-   * The public URL molab imports the notebook from, or null when the page is
-   * not an importable notebook. Query and hash are dropped so the same notebook
-   * always yields the same URL.
+   * The URL molab imports the notebook from, or null when the page is not a
+   * notebook molab can fetch (including one the link can tell is private).
+   * Query and hash are dropped so the same notebook always yields the same URL.
    */
   sourceUrl(url: URL): string | null;
 }

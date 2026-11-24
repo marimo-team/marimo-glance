@@ -1,4 +1,4 @@
-export const MOLAB_ORIGIN = "https://molab.marimo.io";
+const MOLAB_ORIGIN = "https://molab.marimo.io";
 
 /**
  * molab imports any public notebook URL appended to its origin
