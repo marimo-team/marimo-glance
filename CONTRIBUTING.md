@@ -110,9 +110,10 @@ The rendering logic is kept separate from the extension so the core stays reusab
 | Package                     | What it does                                                                   |
 | --------------------------- | ------------------------------------------------------------------------------ |
 | `@marimo/notebook-core`     | Portable core: detect a notebook, build the playground URL, render the iframe. |
-| `@marimo/extension-runtime` | Watches the page and mounts the opt-in switcher; survives soft navigations.    |
+| `@marimo/extension-runtime` | Watches the page and mounts the switcher or molab pill; survives soft navs.    |
 | `@marimo/host-github`       | Teaches the runtime about `github.com` blobs and `gist.github.com`.            |
 | `@marimo/host-gitlab`       | Teaches the runtime about `gitlab.com` blobs.                                  |
+| `@marimo/host-colab`        | Teaches the runtime which Colab notebooks molab can import.                    |
 | `apps/extension`            | The [WXT](https://wxt.dev) extension for Chrome and Firefox.                   |
 
 ### Core invariant: dependency direction
@@ -121,17 +122,20 @@ The dependency graph flows inbound and must stay that way:
 
 - `notebook-core` imports **nothing internal** (zero monorepo dependencies).
 - Hosts and the runtime import **only `notebook-core`** — never each other, never sideways.
-- The extension wires a host and the runtime together.
+- The extension wires each site's host or notebook link to the runtime.
 
 A PR that breaks this direction won't be merged; keeping it intact is what lets the core be reused elsewhere.
 
-## Adding a new host
+## Adding a new site
 
-Supporting a new site means writing a small "host" that answers four questions: does this URL match, what is the source, where is the code element on the page, and (optionally) what is the page theme. The runtime does the rest — you never edit it to add a site.
+Supporting a new site means writing a small platform adapter. The runtime does the rest — you never edit it to add a site.
 
-1. Create `packages/host-<platform>/` mirroring an existing host (`package.json` depending on `@marimo/notebook-core`, `tsconfig.json`, `src/`, `test/`).
-2. Implement the `Host` interface in `src/host.ts` and export it from `src/index.ts`.
-3. To ship it, add the package to the extension and pass your host to `createRuntime()` in the content script.
+- To render marimo notebooks, write a `Host`. It answers four questions: does this URL match, what is the source, where is the code element on the page, and (optionally) what is the page theme.
+- To offer Jupyter notebooks to molab, write a `NotebookLink`. It answers one: what URL should molab import, or none.
+
+1. Create `packages/host-<platform>/` mirroring an existing one (`package.json` depending on `@marimo/notebook-core`, `tsconfig.json`, `src/`, `test/`).
+2. Implement `Host` in `src/host.ts`, `NotebookLink` in `src/notebook-link.ts`, or both, and export them from `src/index.ts`.
+3. To ship it, add the package to the extension, list the site in `apps/extension/hosts.ts`, and add its entry in the content script. Prefer an opt-in site over a built-in one: a new install-time permission disables the extension for existing users until they re-approve it.
 
 Each package has its own README explaining its boundaries — the fastest way to find where a change belongs.
 
