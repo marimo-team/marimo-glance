@@ -24,4 +24,19 @@ export interface Host {
   readTheme?(): Theme;
 }
 
+/**
+ * A page that shows a Jupyter notebook molab can import. Unlike a `Host`, a link
+ * has nothing to render in place: the runtime only offers a way out to molab,
+ * so no source, anchor, or theme is needed.
+ */
+export interface NotebookLink {
+  id: string;
+  /**
+   * The public URL molab imports the notebook from, or null when the page is
+   * not an importable notebook. Query and hash are dropped so the same notebook
+   * always yields the same URL.
+   */
+  sourceUrl(url: URL): string | null;
+}
+
 export interface RenderOptions extends PlaygroundOptions {}

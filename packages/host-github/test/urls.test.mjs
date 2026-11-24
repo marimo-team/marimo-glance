@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { blobRawUrl, isBlobUrl, isGistUrl } from "../dist/index.js";
+import { blobRawUrl, isBlobUrl, isGistUrl, isNotebookBlobUrl } from "../dist/index.js";
 
 test("isBlobUrl accepts a github.com .py blob view", () => {
   assert.equal(isBlobUrl(new URL("https://github.com/o/r/blob/main/nb.py")), true);
@@ -64,4 +64,20 @@ test("isGistUrl rejects listing and discovery routes", () => {
 
 test("isGistUrl rejects github.com and other hosts", () => {
   assert.equal(isGistUrl(new URL("https://github.com/o/r")), false);
+});
+
+test("isNotebookBlobUrl accepts a github.com .ipynb blob view", () => {
+  assert.equal(isNotebookBlobUrl(new URL("https://github.com/o/r/blob/main/nb.ipynb")), true);
+});
+
+test("isNotebookBlobUrl rejects Python and non-blob notebook paths", () => {
+  assert.equal(isNotebookBlobUrl(new URL("https://github.com/o/r/blob/main/nb.py")), false);
+  assert.equal(isNotebookBlobUrl(new URL("https://github.com/o/r/tree/main/nb.ipynb")), false);
+});
+
+test("isNotebookBlobUrl rejects GitHub Enterprise, which molab cannot fetch", () => {
+  assert.equal(
+    isNotebookBlobUrl(new URL("https://github.company.com/o/r/blob/main/nb.ipynb")),
+    false,
+  );
 });

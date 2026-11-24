@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { githubHost } from "../dist/index.js";
+import { githubHost, githubNotebookLink } from "../dist/index.js";
 import { installDom, seedBlobPage, seedGistPage, stubFetch } from "./dom.mjs";
 
 const MARIMO = "import marimo\n\napp = marimo.App()\n";
@@ -63,4 +63,19 @@ test("readTheme maps GitHub's color-mode attribute, defaulting to system", () =>
   assert.equal(githubHost.readTheme(), "dark");
   dom.window.document.documentElement.dataset.colorMode = "auto";
   assert.equal(githubHost.readTheme(), "system");
+});
+
+test("githubNotebookLink yields the blob URL without query or hash", () => {
+  assert.equal(
+    githubNotebookLink.sourceUrl(new URL("https://github.com/o/r/blob/main/a/nb.ipynb?plain=1#L3")),
+    "https://github.com/o/r/blob/main/a/nb.ipynb",
+  );
+});
+
+test("githubNotebookLink ignores pages that are not github.com notebooks", () => {
+  assert.equal(
+    githubNotebookLink.sourceUrl(new URL("https://github.com/o/r/blob/main/nb.py")),
+    null,
+  );
+  assert.equal(githubNotebookLink.sourceUrl(new URL("https://gist.github.com/o/abc123")), null);
 });
