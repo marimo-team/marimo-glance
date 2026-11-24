@@ -226,7 +226,7 @@ test("overlapping syncs across a navigation inject once without a reboot", async
   runtime.stop();
 });
 
-test("a same-page tick during the fetch still injects", async () => {
+test("same-page ticks during the fetch wait for it and inject once", async () => {
   installDom();
   seedCodePage();
   globalThis.sessionStorage.setItem("mv-view", "notebook");
@@ -235,9 +235,11 @@ test("a same-page tick during the fetch still injects", async () => {
   const gate = new Promise((resolve) => {
     release = resolve;
   });
+  let calls = 0;
   const runtime = createRuntime(
     makeHost({
       getSource: async () => {
+        calls += 1;
         await gate;
         return "import marimo\n\napp = marimo.App()\n";
       },
@@ -250,6 +252,7 @@ test("a same-page tick during the fetch still injects", async () => {
   await Promise.all([first, second]);
 
   assert.equal(iframes().length, 1, "the overlap does not strand the page unhandled");
+  assert.equal(calls, 1, "a busy page does not restart the fetch on every tick");
   runtime.stop();
 });
 

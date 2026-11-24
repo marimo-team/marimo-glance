@@ -1,42 +1,31 @@
 import { className, EXT_CSS_CLASS_PREFIX } from "@marimo/notebook-core";
+import { injectStyles, mountFloatingRoot } from "./floating.js";
 
 const STYLE_ELEMENT_ID = `${EXT_CSS_CLASS_PREFIX}-link-out-styles`;
-
-/** How much a dismissal hides: just the notebook, or every notebook on the site. */
-export type DismissalScope = "notebook" | "site";
+const MENU_ID = `${EXT_CSS_CLASS_PREFIX}-link-out-menu`;
 
 export interface LinkOutPill {
+  /** False once the page has removed the pill, e.g. by re-rendering `body`. */
+  readonly isConnected: boolean;
   dispose(): void;
 }
 
 export interface LinkOutPillOptions {
   href: string;
-  /** Shown in the site-wide option, e.g. `github.com`. */
-  siteLabel: string;
-  onDismiss(scope: DismissalScope): void;
+  /** Named in the site-wide option, e.g. `github.com`. */
+  site: string;
+  onHideNotebook(): void;
+  onHideSite(): void;
 }
 
 /**
- * Mount the floating "Open in molab" pill: a link that opens molab in a new tab
- * and a dismiss button that asks how much to hide. It is plain DOM so it works
- * on any page, including SPAs like Colab, with no anchor element to find.
+ * Mount the floating "Open in molab" pill: a link that opens molab in a new tab,
+ * and a toggle disclosing how much to hide. The options follow the pill in the
+ * DOM, so they come next in tab order, and are drawn above it by CSS.
  */
 export function mountLinkOutPill(options: LinkOutPillOptions): LinkOutPill {
-  ensureStyles();
-
-  const root = document.createElement("div");
-  root.className = className("link-out");
-
-  const menu = document.createElement("div");
-  menu.className = className("link-out__menu");
-  menu.hidden = true;
-  menu.append(
-    menuItem("Hide for this notebook", () => options.onDismiss("notebook")),
-    menuItem(`Hide on all of ${options.siteLabel}`, () => options.onDismiss("site")),
-  );
-
-  const pill = document.createElement("div");
-  pill.className = className("link-out__pill");
+  injectStyles(STYLE_ELEMENT_ID, LINK_OUT_CSS);
+  const root = mountFloatingRoot("link-out");
 
   const link = document.createElement("a");
   link.className = className("link-out__link");
@@ -45,23 +34,57 @@ export function mountLinkOutPill(options: LinkOutPillOptions): LinkOutPill {
   link.rel = "noopener noreferrer";
   link.textContent = "Open in molab";
 
-  const dismiss = document.createElement("button");
-  dismiss.type = "button";
-  dismiss.className = className("link-out__dismiss");
-  dismiss.setAttribute("aria-label", "Dismiss");
-  dismiss.setAttribute("aria-haspopup", "true");
-  dismiss.setAttribute("aria-expanded", "false");
-  dismiss.textContent = "×";
-  dismiss.addEventListener("click", () => {
-    menu.hidden = !menu.hidden;
-    dismiss.setAttribute("aria-expanded", String(!menu.hidden));
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = className("link-out__toggle");
+  toggle.textContent = "×";
+  toggle.setAttribute("aria-label", "Hide options");
+  toggle.setAttribute("aria-controls", MENU_ID);
+  toggle.setAttribute("aria-expanded", "false");
+
+  const pill = document.createElement("div");
+  pill.className = className("link-out__pill");
+  pill.append(link, toggle);
+
+  const hideNotebook = menuItem("Hide for this notebook", options.onHideNotebook);
+  const menu = document.createElement("div");
+  menu.id = MENU_ID;
+  menu.className = className("link-out__menu");
+  menu.hidden = true;
+  menu.append(hideNotebook, menuItem(`Hide on all of ${options.site}`, options.onHideSite));
+
+  root.append(pill, menu);
+
+  let open = false;
+  function setOpen(next: boolean): void {
+    open = next;
+    menu.hidden = !open;
+    toggle.setAttribute("aria-expanded", String(open));
+  }
+
+  toggle.addEventListener("click", () => {
+    setOpen(!open);
+    if (open) hideNotebook.focus();
   });
+  root.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || !open) return;
+    setOpen(false);
+    toggle.focus();
+  });
+  const closeOnOutsidePress = (event: PointerEvent) => {
+    if (!root.contains(event.target as Node)) setOpen(false);
+  };
+  document.addEventListener("pointerdown", closeOnOutsidePress, true);
 
-  pill.append(link, dismiss);
-  root.append(menu, pill);
-  document.body.append(root);
-
-  return { dispose: () => root.remove() };
+  return {
+    get isConnected() {
+      return root.isConnected;
+    },
+    dispose() {
+      document.removeEventListener("pointerdown", closeOnOutsidePress, true);
+      root.remove();
+    },
+  };
 }
 
 function menuItem(label: string, onSelect: () => void): HTMLButtonElement {
@@ -73,25 +96,9 @@ function menuItem(label: string, onSelect: () => void): HTMLButtonElement {
   return item;
 }
 
-function ensureStyles(): void {
-  if (document.getElementById(STYLE_ELEMENT_ID)) return;
-  const style = document.createElement("style");
-  style.id = STYLE_ELEMENT_ID;
-  style.textContent = LINK_OUT_CSS;
-  document.head.append(style);
-}
-
 const LINK_OUT_CSS = `
-.${EXT_CSS_CLASS_PREFIX}-link-out {
-	position: fixed;
-	right: 16px;
-	bottom: 16px;
-	z-index: 2147483000;
-	display: flex;
-	flex-direction: column;
-	align-items: flex-end;
-	gap: 6px;
-	font: 500 13px/1.4 system-ui, sans-serif;
+.${EXT_CSS_CLASS_PREFIX}-floating.${EXT_CSS_CLASS_PREFIX}-link-out {
+	flex-direction: column-reverse;
 }
 .${EXT_CSS_CLASS_PREFIX}-link-out__pill {
 	display: flex;
@@ -110,7 +117,7 @@ const LINK_OUT_CSS = `
 .${EXT_CSS_CLASS_PREFIX}-link-out__link:hover {
 	text-decoration: underline;
 }
-.${EXT_CSS_CLASS_PREFIX}-link-out__dismiss {
+.${EXT_CSS_CLASS_PREFIX}-link-out__toggle {
 	cursor: pointer;
 	border: 0;
 	padding: 0 12px 0 6px;
@@ -119,7 +126,8 @@ const LINK_OUT_CSS = `
 	font: inherit;
 	opacity: 0.75;
 }
-.${EXT_CSS_CLASS_PREFIX}-link-out__dismiss:hover {
+.${EXT_CSS_CLASS_PREFIX}-link-out__toggle:hover,
+.${EXT_CSS_CLASS_PREFIX}-link-out__toggle[aria-expanded="true"] {
 	opacity: 1;
 }
 .${EXT_CSS_CLASS_PREFIX}-link-out__menu {
@@ -144,5 +152,11 @@ const LINK_OUT_CSS = `
 }
 .${EXT_CSS_CLASS_PREFIX}-link-out__item:hover {
 	background: rgba(255, 255, 255, 0.12);
+}
+/* Inset, because the rounded containers clip anything drawn outside them. */
+.${EXT_CSS_CLASS_PREFIX}-link-out a:focus-visible,
+.${EXT_CSS_CLASS_PREFIX}-link-out button:focus-visible {
+	outline: 2px solid #fff;
+	outline-offset: -3px;
 }
 `;

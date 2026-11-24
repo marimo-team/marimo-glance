@@ -1,5 +1,6 @@
 import type { Host, Theme } from "@marimo/notebook-core";
 import { isMarimoNotebook } from "@marimo/notebook-core";
+import { type Controller, createController } from "./controller.js";
 import { createNotebookView } from "./notebook-view.js";
 import { installSwitcher, type Switcher, savedView } from "./switcher.js";
 import { resolveTheme } from "./theme.js";
@@ -7,10 +8,7 @@ import { resolveTheme } from "./theme.js";
 export interface RuntimeOptions {
   /** Provenance tag forwarded to the playground URL as `ref`. */
   ref?: string;
-  /**
-   * Defer a coalesced reconcile pass. Defaults to `requestAnimationFrame`.
-   * Injectable so tests can drive scheduling deterministically.
-   */
+  /** Defer a coalesced reconcile pass. Defaults to `requestAnimationFrame`. */
   schedule?: (callback: () => void) => void;
   /** Milliseconds to wait for the iframe before treating it as blocked. */
   loadTimeoutMs?: number;
@@ -21,15 +19,6 @@ function pageKey(url: URL): string {
   return url.pathname + url.search;
 }
 
-export interface Runtime {
-  /** Begin observing the page and run an initial reconcile pass. */
-  start(): void;
-  /** Stop observing, remove any injection, and reject further work. */
-  stop(): void;
-  /** Run one reconcile pass immediately. Exposed for the initial pass and tests. */
-  syncNow(): Promise<void>;
-}
-
 /**
  * A host-agnostic reconcile-on-observe controller. It watches the page and,
  * whenever the page settles into a marimo notebook the host recognises, mounts
@@ -37,29 +26,24 @@ export interface Runtime {
  * idempotent and keyed on the URL, so repeated observer ticks are cheap and a
  * same-page re-render that wipes the injection is repaired on the next tick.
  */
-export function createRuntime(host: Host, options: RuntimeOptions = {}): Runtime {
-  const schedule = options.schedule ?? ((callback) => requestAnimationFrame(callback));
-
+export function createRuntime(host: Host, options: RuntimeOptions = {}): Controller {
   let injectedAgainst: HTMLElement | null = null;
   let handledKey: string | null = null;
+  // The page whose source is being fetched. Passes for the same page wait on
+  // that fetch instead of starting their own; a pass that resumes to find the
+  // claim moved on (navigation, reset, stop) drops its result.
+  let fetchingKey: string | null = null;
   let teardown: (() => void) | null = null;
-  let observer: MutationObserver | null = null;
-  let scheduled = false;
-  let disposed = false;
-  // Bumped by every pass so a pass that resumes after `await` can tell whether
-  // a newer pass has taken over and, if so, leave the shared state to it.
-  let epoch = 0;
 
   function reset(): void {
     teardown?.();
     teardown = null;
     injectedAgainst = null;
     handledKey = null;
+    fetchingKey = null;
   }
 
-  async function sync(): Promise<void> {
-    const thisEpoch = ++epoch;
-
+  async function reconcile(): Promise<void> {
     // Self-heal: a same-page re-render can detach our injection without any
     // navigation, so drop stale state before deciding what to do.
     if (injectedAgainst && !injectedAgainst.isConnected) reset();
@@ -71,30 +55,23 @@ export function createRuntime(host: Host, options: RuntimeOptions = {}): Runtime
     }
 
     const key = pageKey(url);
-    if (key === handledKey) return;
+    if (key === handledKey || key === fetchingKey) return;
+    if (!host.findAnchor()) return; // DOM not ready yet; a later observer tick retries.
 
-    const anchor = host.findAnchor();
-    if (!anchor) return; // DOM not ready yet; a later observer tick retries.
+    fetchingKey = key;
+    const source = await host.getSource(url).catch((error: unknown) => {
+      console.error("[marimo-glance] failed to fetch notebook source", error);
+      return null;
+    });
+    if (fetchingKey !== key) return;
+    fetchingKey = null;
 
-    const source = await host.getSource(url);
-
-    // A newer pass started while awaiting; it owns the shared state now.
-    if (thisEpoch !== epoch) return;
-
-    // The page may have navigated, torn down, or been stopped while awaiting.
     const code = host.findAnchor();
-    if (disposed || pageKey(new URL(window.location.href)) !== key || !code) {
-      return;
-    }
+    if (pageKey(new URL(window.location.href)) !== key || !code) return;
     // A failed fetch stays retryable; a clean fetch is the terminal outcome.
     if (source === null) return;
 
-    // Memoize only here, past the await, never before it. Setting handledKey
-    // up front lets an interloping pass short-circuit at the key check above
-    // to a no-op while the epoch guard kills the pass that is still fetching,
-    // stranding the key as handled with nothing injected.
     handledKey = key;
-
     if (!isMarimoNotebook(source)) return;
 
     teardown?.();
@@ -102,31 +79,7 @@ export function createRuntime(host: Host, options: RuntimeOptions = {}): Runtime
     injectedAgainst = code;
   }
 
-  function trigger(): void {
-    if (scheduled || disposed) return;
-    scheduled = true;
-    schedule(() => {
-      scheduled = false;
-      void sync();
-    });
-  }
-
-  return {
-    start() {
-      if (observer) return;
-      disposed = false;
-      observer = new MutationObserver(trigger);
-      observer.observe(document.body, { childList: true, subtree: true });
-      void sync();
-    },
-    stop() {
-      disposed = true;
-      observer?.disconnect();
-      observer = null;
-      reset();
-    },
-    syncNow: sync,
-  };
+  return createController({ reconcile, reset, schedule: options.schedule });
 }
 
 /**
