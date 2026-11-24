@@ -1,5 +1,6 @@
 import { browser } from "wxt/browser";
-import { isBuiltInOrigin, originPattern, readEnabledHosts } from "./enabled-hosts";
+import { originPattern, readEnabledHosts, readEnabledOptInOrigins } from "./enabled-hosts";
+import { isKnownOrigin } from "./hosts";
 
 const CONTENT_SCRIPT = "/content-scripts/content.js";
 const ID_PREFIX = "enabled:";
@@ -12,8 +13,8 @@ const ID_PREFIX = "enabled:";
 const sessionHandles: { unregister(): void }[] = [];
 
 /**
- * Register the content script for every enabled origin, replacing whatever was
- * registered before.
+ * Register the content script for every enabled origin, self-hosted or opt-in,
+ * replacing whatever was registered before.
  *
  * Registrations are not persisted across browser sessions even on Chrome, where
  * they could be: the background script re-syncs at startup anyway, and letting
@@ -21,13 +22,14 @@ const sessionHandles: { unregister(): void }[] = [];
  * permission was revoked while the extension was not running.
  */
 export async function syncRegistrations(): Promise<void> {
-  // A built-in origin is already covered by the static `matches`, so registering
-  // it again would inject the script twice and start two runtimes on one page.
-  // The popup will not offer to enable one, but a stale storage entry from an
-  // earlier version must not be able to cause it either.
-  const origins = Object.keys(await readEnabledHosts()).filter(
-    (origin) => !isBuiltInOrigin(origin),
+  // A known origin is never a self-hosted instance: a built-in one is covered by
+  // the static `matches` (registering it would start two runtimes on one page),
+  // and an opt-in one is registered below. The popup will not offer to enable
+  // one, but a stale storage entry from an earlier version must not either.
+  const selfHosted = Object.keys(await readEnabledHosts()).filter(
+    (origin) => !isKnownOrigin(origin),
   );
+  const origins = [...selfHosted, ...(await readEnabledOptInOrigins())];
   const patterns = origins.map(originPattern);
 
   if (browser.scripting?.registerContentScripts) {

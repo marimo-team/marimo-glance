@@ -1,15 +1,14 @@
 import { browser } from "wxt/browser";
-import { SUPPORTED_SITES, type Surface } from "./hosts";
+import { type BuiltInSurface, OPT_IN_ORIGINS } from "./hosts";
 
 const STORAGE_KEY = "enabledHosts";
 
 /**
- * The platforms a user can declare a self-hosted instance to be. Derived from
- * `Surface` so the content script's existing host table serves both built-in
- * surfaces and user-enabled origins with no second mapping. Gists are absent
- * because a gist surface is not something an instance can be.
+ * The platforms a user can declare a self-hosted instance to be, named after
+ * the built-in surface whose host serves it. Gists are absent because a gist
+ * surface is not something an instance can be.
  */
-export type Flavor = Extract<Surface, "github" | "gitlab">;
+export type Flavor = Extract<BuiltInSurface, "github" | "gitlab">;
 
 export const FLAVORS: readonly Flavor[] = ["github", "gitlab"];
 
@@ -30,6 +29,17 @@ async function readStored(): Promise<EnabledHosts> {
   return (stored[STORAGE_KEY] as EnabledHosts | undefined) ?? {};
 }
 
+async function grantedPatterns(): Promise<Set<string>> {
+  const { origins } = await browser.permissions.getAll();
+  return new Set(origins ?? []);
+}
+
+/** The opt-in sites the user has turned on. The grant alone records it. */
+export async function readEnabledOptInOrigins(): Promise<string[]> {
+  const granted = await grantedPatterns();
+  return OPT_IN_ORIGINS.filter((origin) => granted.has(originPattern(origin)));
+}
+
 /**
  * Enabled hosts whose permission is still granted, pruning any that are not.
  *
@@ -39,8 +49,7 @@ async function readStored(): Promise<EnabledHosts> {
  */
 export async function readEnabledHosts(): Promise<EnabledHosts> {
   const stored = await readStored();
-  const { origins } = await browser.permissions.getAll();
-  const granted = new Set(origins ?? []);
+  const granted = await grantedPatterns();
 
   const live: EnabledHosts = {};
   for (const [origin, flavor] of Object.entries(stored)) {
@@ -79,13 +88,4 @@ export async function forgetEnabledHost(origin: string): Promise<void> {
   const stored = await readStored();
   delete stored[origin];
   await browser.storage.local.set({ [STORAGE_KEY]: stored });
-}
-
-/**
- * Whether an origin is already covered by the static content-script matches.
- * Enabling one of these would register a second overlapping content script and
- * start two runtimes on the same page.
- */
-export function isBuiltInOrigin(origin: string): boolean {
-  return new URL(origin).hostname in SUPPORTED_SITES;
 }
