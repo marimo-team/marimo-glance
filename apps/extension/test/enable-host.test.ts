@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, type MockInstance, vi } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
+import { applyEnabledHostChanges } from "@/enabled-hosts";
 import { disableOrigin, enableKnownSite, enableSelfHosted } from "@/entrypoints/popup/enable-host";
 import { grantOrigins } from "./browser-stubs";
 
@@ -12,6 +13,7 @@ beforeEach(() => {
   fakeBrowser.reset();
   vi.restoreAllMocks();
   grantOrigins();
+  applyEnabledHostChanges();
   request = vi.spyOn(fakeBrowser.permissions, "request").mockResolvedValue(true);
 });
 
@@ -23,9 +25,17 @@ describe("requesting inside the click", () => {
     await done;
   });
 
-  it("enableSelfHosted requests before awaiting anything", async () => {
+  it("enableSelfHosted requests, and sends the platform, before awaiting anything", async () => {
+    const send = vi.spyOn(fakeBrowser.runtime, "sendMessage");
+
     const done = enableSelfHosted(SELF_HOSTED, "gitlab");
+
     expect(request).toHaveBeenCalledWith({ origins: [`${SELF_HOSTED}/*`] });
+    expect(send).toHaveBeenCalledWith({
+      type: "save-enabled-host",
+      origin: SELF_HOSTED,
+      flavor: "gitlab",
+    });
     await done;
   });
 });
@@ -34,7 +44,7 @@ describe("enableSelfHosted", () => {
   it("stores the platform when the user grants", async () => {
     await enableSelfHosted(SELF_HOSTED, "gitlab");
 
-    expect(await stored()).toEqual({ [SELF_HOSTED]: "gitlab" });
+    await vi.waitFor(async () => expect(await stored()).toEqual({ [SELF_HOSTED]: "gitlab" }));
   });
 
   it("forgets the platform when the user declines", async () => {

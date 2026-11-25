@@ -106,6 +106,23 @@ describe("syncRegistrations in open tabs", () => {
   });
 });
 
+describe("syncRegistrations updates", () => {
+  it("leaves an unchanged registration in place", async () => {
+    grantOrigins(COLAB);
+    await syncRegistrations();
+    const unregister = vi.mocked(fakeBrowser.scripting.unregisterContentScripts);
+    const register = vi.mocked(fakeBrowser.scripting.registerContentScripts);
+    unregister.mockClear();
+    register.mockClear();
+
+    await syncRegistrations();
+
+    expect(unregister).not.toHaveBeenCalled();
+    expect(register).not.toHaveBeenCalled();
+    expect(registeredMatches()).toEqual([COLAB]);
+  });
+});
+
 describe("syncRegistrations ordering", () => {
   it("runs overlapping syncs one after another", async () => {
     grantOrigins(COLAB);

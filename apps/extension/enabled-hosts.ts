@@ -72,24 +72,70 @@ export async function storedFlavor(origin: string): Promise<Flavor | null> {
   return stored[origin] ?? null;
 }
 
-export async function saveEnabledHost(origin: string, flavor: Flavor): Promise<void> {
-  const stored = await readStored();
-  await browser.storage.local.set({
-    [STORAGE_KEY]: { ...stored, [origin]: flavor },
+/** A change to the stored instances, sent from the popup for the background script to apply. */
+export type EnabledHostChange =
+  | { type: "save-enabled-host"; origin: string; flavor: Flavor }
+  | { type: "forget-enabled-host"; origin: string };
+
+function isEnabledHostChange(message: unknown): message is EnabledHostChange {
+  if (typeof message !== "object" || message === null) return false;
+  const { type, origin, flavor } = message as Record<string, unknown>;
+  if (typeof origin !== "string") return false;
+  if (type === "forget-enabled-host") return true;
+  return type === "save-enabled-host" && FLAVORS.includes(flavor as Flavor);
+}
+
+/**
+ * Ask the background script to apply a change. Sent rather than written here
+ * because the permission prompt can close the popup between a read and its
+ * write, and so the background script is the only writer.
+ */
+export async function sendEnabledHostChange(change: EnabledHostChange): Promise<void> {
+  try {
+    await browser.runtime.sendMessage(change);
+  } catch (error) {
+    console.error("[marimo-glance] failed to send an enabled-host change", error);
+  }
+}
+
+/** Apply the popup's changes, in the order they were sent. */
+export function applyEnabledHostChanges(): void {
+  browser.runtime.onMessage.addListener((message: unknown) => {
+    if (!isEnabledHostChange(message)) return undefined;
+    const write =
+      message.type === "save-enabled-host"
+        ? saveEnabledHost(message.origin, message.flavor)
+        : forgetEnabledHostsFor([originPattern(message.origin)]);
+    return write.catch((error: unknown) => {
+      console.error("[marimo-glance] failed to apply an enabled-host change", error);
+    });
   });
 }
 
-export async function forgetEnabledHost(origin: string): Promise<void> {
-  await forgetEnabledHostsFor([originPattern(origin)]);
+// Writes read the stored map first, so they run one at a time.
+let writes: Promise<void> = Promise.resolve();
+
+/** Apply `change`, which returns its input untouched when there is nothing to write. */
+function updateStored(change: (hosts: EnabledHosts) => EnabledHosts): Promise<void> {
+  const run = writes.then(async () => {
+    const stored = await readStored();
+    const next = change(stored);
+    if (next !== stored) await browser.storage.local.set({ [STORAGE_KEY]: next });
+  });
+  writes = run.catch(() => {});
+  return run;
+}
+
+function saveEnabledHost(origin: string, flavor: Flavor): Promise<void> {
+  return updateStored((hosts) => ({ ...hosts, [origin]: flavor }));
 }
 
 /** Forget the instances behind these match patterns, e.g. ones whose permission was revoked. */
-export async function forgetEnabledHostsFor(patterns: string[]): Promise<void> {
-  const stored = await readStored();
-  const kept = Object.fromEntries(
-    Object.entries(stored).filter(([origin]) => !patterns.includes(originPattern(origin))),
-  );
-  if (Object.keys(kept).length !== Object.keys(stored).length) {
-    await browser.storage.local.set({ [STORAGE_KEY]: kept });
-  }
+export function forgetEnabledHostsFor(patterns: string[]): Promise<void> {
+  return updateStored((hosts) => {
+    const kept = Object.entries(hosts).filter(
+      ([origin]) => !patterns.includes(originPattern(origin)),
+    );
+    return kept.length === Object.keys(hosts).length ? hosts : Object.fromEntries(kept);
+  });
 }

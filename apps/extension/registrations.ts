@@ -11,9 +11,10 @@ const sessionHandles = new Map<string, { unregister(): void }>();
 let queue: Promise<void> = Promise.resolve();
 
 /**
- * Register the content script for every enabled origin, replacing what was
- * registered before, and start it in open tabs of newly registered origins: a
- * fresh grant does not inject, and reloading would cost the user their page.
+ * Register the content script for exactly the enabled origins, and start it in
+ * open tabs of newly registered ones: a fresh grant does not inject, and
+ * reloading would cost the user their page. Unchanged registrations are left
+ * alone, so a page loading mid-sync still gets the script.
  *
  * Never persisted across sessions: a persisted registration would outlive a
  * permission revoked while the extension was not running.
@@ -26,36 +27,54 @@ export function syncRegistrations(): Promise<void> {
 
 async function sync(): Promise<void> {
   const { selfHosted, optIn } = await readEnabledOrigins();
-  const patterns = [...Object.keys(selfHosted), ...optIn].map(originPattern);
-  const previous = await replaceRegistrations(patterns);
-  const added = patterns.filter((pattern) => !previous.includes(pattern));
+  const wanted = [...Object.keys(selfHosted), ...optIn].map(originPattern);
+  const registered = await registeredPatterns();
+  const added = wanted.filter((pattern) => !registered.includes(pattern));
+  const removed = registered.filter((pattern) => !wanted.includes(pattern));
+
+  await unregister(removed);
+  await register(added);
   if (added.length > 0) await injectIntoOpenTabs(added);
 }
 
-/** Register exactly `patterns`, returning the patterns that were registered before. */
-async function replaceRegistrations(patterns: string[]): Promise<string[]> {
-  if (browser.scripting?.registerContentScripts) {
-    const ids = (await browser.scripting.getRegisteredContentScripts())
-      .map((script) => script.id)
-      .filter((id) => id.startsWith(ID_PREFIX));
-    if (ids.length > 0) await browser.scripting.unregisterContentScripts({ ids });
-    if (patterns.length > 0) {
-      await browser.scripting.registerContentScripts(
-        patterns.map((pattern) => ({
-          id: `${ID_PREFIX}${pattern}`,
-          matches: [pattern],
-          js: [CONTENT_SCRIPT],
-          runAt: "document_idle" as const,
-          persistAcrossSessions: false,
-        })),
-      );
-    }
-    return ids.map((id) => id.slice(ID_PREFIX.length));
-  }
+const usesScripting = () => Boolean(browser.scripting?.registerContentScripts);
 
-  const previous = [...sessionHandles.keys()];
-  for (const handle of sessionHandles.values()) handle.unregister();
-  sessionHandles.clear();
+async function registeredPatterns(): Promise<string[]> {
+  if (!usesScripting()) return [...sessionHandles.keys()];
+  return (await browser.scripting.getRegisteredContentScripts())
+    .map((script) => script.id)
+    .filter((id) => id.startsWith(ID_PREFIX))
+    .map((id) => id.slice(ID_PREFIX.length));
+}
+
+async function unregister(patterns: string[]): Promise<void> {
+  if (patterns.length === 0) return;
+  if (usesScripting()) {
+    await browser.scripting.unregisterContentScripts({
+      ids: patterns.map((pattern) => `${ID_PREFIX}${pattern}`),
+    });
+    return;
+  }
+  for (const pattern of patterns) {
+    sessionHandles.get(pattern)?.unregister();
+    sessionHandles.delete(pattern);
+  }
+}
+
+async function register(patterns: string[]): Promise<void> {
+  if (patterns.length === 0) return;
+  if (usesScripting()) {
+    await browser.scripting.registerContentScripts(
+      patterns.map((pattern) => ({
+        id: `${ID_PREFIX}${pattern}`,
+        matches: [pattern],
+        js: [CONTENT_SCRIPT],
+        runAt: "document_idle" as const,
+        persistAcrossSessions: false,
+      })),
+    );
+    return;
+  }
   for (const pattern of patterns) {
     // MV2-only API: browser.contentScripts.register
     const handle = await (browser as any).contentScripts.register({
@@ -65,7 +84,6 @@ async function replaceRegistrations(patterns: string[]): Promise<string[]> {
     });
     sessionHandles.set(pattern, handle);
   }
-  return previous;
 }
 
 async function injectIntoOpenTabs(patterns: string[]): Promise<void> {

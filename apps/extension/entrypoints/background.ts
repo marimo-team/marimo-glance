@@ -1,5 +1,5 @@
 import { browser } from "wxt/browser";
-import { forgetEnabledHostsFor, watchEnabledHosts } from "@/enabled-hosts";
+import { applyEnabledHostChanges, forgetEnabledHostsFor, watchEnabledHosts } from "@/enabled-hosts";
 import { syncRegistrations } from "@/registrations";
 
 /**
@@ -15,15 +15,22 @@ export default defineBackground(() => {
     });
   };
 
-  // Registrations do not survive a browser restart, and an MV3 worker only
-  // starts for an event it listens to.
+  // Registrations last one session, and the background restarts without an
+  // event of its own, e.g. when the extension is turned off and on again.
+  sync();
+  // An MV3 worker only starts for an event it listens to.
   browser.runtime.onStartup.addListener(sync);
   browser.runtime.onInstalled.addListener(sync);
   browser.permissions.onAdded.addListener(sync);
   // Also covers a permission revoked from browser settings.
   browser.permissions.onRemoved.addListener(({ origins = [] }) => {
-    forgetEnabledHostsFor(origins).finally(sync);
+    forgetEnabledHostsFor(origins)
+      .catch((error: unknown) => {
+        console.error("[marimo-glance] failed to forget revoked instances", error);
+      })
+      .finally(sync);
   });
+  applyEnabledHostChanges();
   // Re-enabling an origin that is already granted fires no permission event.
   watchEnabledHosts(sync);
 });

@@ -7,7 +7,7 @@ The actual browser extension, built with [WXT](https://wxt.dev). There's barely 
 - `hosts.ts` names the known sites: built-in ones (github.com, gist.github.com, gitlab.com) that run from install, and opt-in ones (Colab) the user enables from the popup.
 - `entrypoints/content.ts` is the content script. It resolves the page to a surface, starts `createRuntime(host, { ref: "marimo-glance:<surface>" })` and/or `createLinkOut(link, { dismissals })`, and stops them when WXT invalidates the context.
 - `link-out-dismissals.ts` keeps the molab pill's dismissals in `storage.local`.
-- `enabled-hosts.ts` and `registrations.ts` track opt-in and self-hosted origins and register the content script on them; `entrypoints/background.ts` re-syncs those registrations whenever a permission or a stored instance changes (and at startup), and injects the script into already-open tabs of newly registered origins.
+- `enabled-hosts.ts` and `registrations.ts` track opt-in and self-hosted origins and register the content script on them; `entrypoints/background.ts` re-syncs those registrations whenever it starts and whenever a permission or a stored instance changes, applies the popup's changes to the stored instances, and injects the script into already-open tabs of newly registered origins.
 - `entrypoints/popup/` is the React popup from the toolbar icon: whether the extension is active on the current site, and the buttons to enable or disable it.
 - `wxt.config.ts` holds the manifest: name, description, install-time `host_permissions`, and the optional permission ceiling for sites enabled later.
 
