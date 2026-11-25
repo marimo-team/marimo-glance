@@ -1,45 +1,44 @@
 import { browser } from "wxt/browser";
-import { originPattern, readEnabledHosts, readEnabledOptInOrigins } from "./enabled-hosts";
-import { isKnownOrigin } from "./hosts";
+import { originPattern, readEnabledOrigins } from "./enabled-hosts";
 
 const CONTENT_SCRIPT = "/content-scripts/content.js";
 const ID_PREFIX = "enabled:";
 
-/**
- * Firefox MV2 registration handles, which live only for this background
- * session. They are tracked here so a re-sync can drop them before registering
- * again; Chrome MV3 has `getRegisteredContentScripts` and needs no bookkeeping.
- */
-const sessionHandles: { unregister(): void }[] = [];
+/** Firefox MV2 has no way to list registrations, so they are tracked here. */
+const sessionHandles = new Map<string, { unregister(): void }>();
+
+// Syncs run one at a time: concurrent ones would race on registration ids.
+let queue: Promise<void> = Promise.resolve();
 
 /**
- * Register the content script for every enabled origin, self-hosted or opt-in,
- * replacing whatever was registered before.
+ * Register the content script for every enabled origin, replacing what was
+ * registered before, and start it in open tabs of newly registered origins: a
+ * fresh grant does not inject, and reloading would cost the user their page.
  *
- * Registrations are not persisted across browser sessions even on Chrome, where
- * they could be: the background script re-syncs at startup anyway, and letting
- * the browser remember them would leave a live registration for an origin whose
- * permission was revoked while the extension was not running.
+ * Never persisted across sessions: a persisted registration would outlive a
+ * permission revoked while the extension was not running.
  */
-export async function syncRegistrations(): Promise<void> {
-  // A known origin is never a self-hosted instance: a built-in one is covered by
-  // the static `matches` (registering it would start two runtimes on one page),
-  // and an opt-in one is registered below. The popup will not offer to enable
-  // one, but a stale storage entry from an earlier version must not either.
-  const selfHosted = Object.keys(await readEnabledHosts()).filter(
-    (origin) => !isKnownOrigin(origin),
-  );
-  const origins = [...selfHosted, ...(await readEnabledOptInOrigins())];
-  const patterns = origins.map(originPattern);
+export function syncRegistrations(): Promise<void> {
+  const run = queue.then(sync);
+  queue = run.catch(() => {});
+  return run;
+}
 
+async function sync(): Promise<void> {
+  const { selfHosted, optIn } = await readEnabledOrigins();
+  const patterns = [...Object.keys(selfHosted), ...optIn].map(originPattern);
+  const previous = await replaceRegistrations(patterns);
+  const added = patterns.filter((pattern) => !previous.includes(pattern));
+  if (added.length > 0) await injectIntoOpenTabs(added);
+}
+
+/** Register exactly `patterns`, returning the patterns that were registered before. */
+async function replaceRegistrations(patterns: string[]): Promise<string[]> {
   if (browser.scripting?.registerContentScripts) {
-    const registered = await browser.scripting.getRegisteredContentScripts();
-    const ids = registered
-      .filter((script) => script.id.startsWith(ID_PREFIX))
-      .map((script) => script.id);
-    if (ids.length > 0) {
-      await browser.scripting.unregisterContentScripts({ ids });
-    }
+    const ids = (await browser.scripting.getRegisteredContentScripts())
+      .map((script) => script.id)
+      .filter((id) => id.startsWith(ID_PREFIX));
+    if (ids.length > 0) await browser.scripting.unregisterContentScripts({ ids });
     if (patterns.length > 0) {
       await browser.scripting.registerContentScripts(
         patterns.map((pattern) => ({
@@ -51,36 +50,32 @@ export async function syncRegistrations(): Promise<void> {
         })),
       );
     }
-    return;
+    return ids.map((id) => id.slice(ID_PREFIX.length));
   }
 
-  for (const handle of sessionHandles) {
-    handle.unregister();
-  }
-  sessionHandles.length = 0;
+  const previous = [...sessionHandles.keys()];
+  for (const handle of sessionHandles.values()) handle.unregister();
+  sessionHandles.clear();
   for (const pattern of patterns) {
     // MV2-only API: browser.contentScripts.register
-    sessionHandles.push(
-      await (browser as any).contentScripts.register({
-        matches: [pattern],
-        js: [{ file: CONTENT_SCRIPT }],
-        runAt: "document_idle",
-      }),
-    );
+    const handle = await (browser as any).contentScripts.register({
+      matches: [pattern],
+      js: [{ file: CONTENT_SCRIPT }],
+      runAt: "document_idle",
+    });
+    sessionHandles.set(pattern, handle);
   }
+  return previous;
 }
 
-/**
- * Run the content script in a tab that is already open. A fresh grant does not
- * retroactively inject anything, and reloading would cost the user their page
- * state, so the script is injected directly instead.
- */
-export async function injectContentScript(tabId: number): Promise<void> {
+async function injectIntoOpenTabs(patterns: string[]): Promise<void> {
+  const tabs = await browser.tabs.query({ url: patterns });
+  await Promise.allSettled(tabs.flatMap((tab) => (tab.id === undefined ? [] : [inject(tab.id)])));
+}
+
+async function inject(tabId: number): Promise<void> {
   if (browser.scripting?.executeScript) {
-    await browser.scripting.executeScript({
-      target: { tabId },
-      files: [CONTENT_SCRIPT],
-    });
+    await browser.scripting.executeScript({ target: { tabId }, files: [CONTENT_SCRIPT] });
     return;
   }
   // MV2-only API: browser.tabs.executeScript

@@ -8,7 +8,7 @@ import { builtInSite, optInSite, type Surface } from "./hosts";
 /** What runs on a page: a host renders marimo notebooks, a link offers Jupyter ones to molab. */
 export type SurfaceConfig =
   | { host: Host; link?: NotebookLink }
-  | { host?: never; link: NotebookLink };
+  | { host?: undefined; link: NotebookLink };
 
 // Typed by `Surface`, so a site added to hosts.ts without an entry here is a
 // type error rather than a page that silently does nothing.

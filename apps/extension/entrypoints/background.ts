@@ -1,30 +1,29 @@
 import { browser } from "wxt/browser";
+import { forgetEnabledHostsFor, watchEnabledHosts } from "@/enabled-hosts";
 import { syncRegistrations } from "@/registrations";
 
 /**
- * Keeps content-script registrations in step with the origins the user has
- * enabled.
- *
- * This runs at startup rather than only when a host is enabled because Firefox
- * MV2 registrations last only for the browser session, so without a startup
- * re-sync an enabled host would quietly stop working after a restart.
+ * Keeps content-script registrations a function of two inputs, the granted
+ * permissions and the stored instances, by re-syncing whenever either changes.
+ * The popup only writes those inputs: the browser's permission prompt can close
+ * it, and either may land first.
  */
 export default defineBackground(() => {
-  function syncSafely(): void {
+  const sync = () => {
     syncRegistrations().catch((error: unknown) => {
       console.error("[marimo-glance] failed to sync content-script registrations", error);
     });
-  }
+  };
 
-  syncSafely();
-
-  browser.runtime.onInstalled.addListener(() => {
-    syncSafely();
+  // Registrations do not survive a browser restart, and an MV3 worker only
+  // starts for an event it listens to.
+  browser.runtime.onStartup.addListener(sync);
+  browser.runtime.onInstalled.addListener(sync);
+  browser.permissions.onAdded.addListener(sync);
+  // Also covers a permission revoked from browser settings.
+  browser.permissions.onRemoved.addListener(({ origins = [] }) => {
+    forgetEnabledHostsFor(origins).finally(sync);
   });
-
-  // Covers a permission revoked from browser settings, where the extension gets
-  // no other signal that an enabled host is no longer allowed.
-  browser.permissions.onRemoved.addListener(() => {
-    syncSafely();
-  });
+  // Re-enabling an origin that is already granted fires no permission event.
+  watchEnabledHosts(sync);
 });

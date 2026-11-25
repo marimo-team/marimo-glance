@@ -10,19 +10,18 @@ import {
 } from "@/components/ui/select";
 import { type Flavor, FLAVOR_LABELS, FLAVORS } from "@/enabled-hosts";
 import type { Surface } from "@/hosts";
-import { disableOrigin, enableOrigin } from "./enable-host";
+import { disableOrigin, enableKnownSite, enableSelfHosted } from "./enable-host";
 import LinkOutRestore from "./LinkOutRestore";
 import { ISSUES_URL } from "./links";
 import type { SiteSupport } from "./site-support";
 
-const RUNS_MARIMO = "Runs marimo notebooks (.py) in the page.";
-const OPENS_JUPYTER = "Opens Jupyter notebooks (.ipynb) in molab.";
+const RUNS_MARIMO = "Runs marimo notebooks inline.";
+const OPENS_JUPYTER = "Opens Jupyter notebooks in molab.";
 
 const SITES: Record<Surface, { label: string; description: string }> = {
   github: {
     label: "GitHub",
-    description:
-      "Runs marimo notebooks (.py) in the page, and opens Jupyter notebooks (.ipynb) in molab.",
+    description: "Runs marimo notebooks inline, and opens Jupyter notebooks in molab.",
   },
   gist: { label: "GitHub Gists", description: RUNS_MARIMO },
   gitlab: { label: "GitLab", description: RUNS_MARIMO },
@@ -30,11 +29,9 @@ const SITES: Record<Surface, { label: string; description: string }> = {
 };
 
 /**
- * States whether the extension is active on the current site, and offers to
- * enable it where it is not. The wording stays about the site rather than the
- * page: the check behind it is a hostname lookup, so it reads as active on a
- * repo home page holding no notebook at all, and page-level wording there would
- * promise something this cannot know.
+ * Whether the extension is active on the current site, with a way to enable it
+ * where it is not. The wording stays site-level: the check is a hostname lookup,
+ * so it cannot know whether the page holds a notebook.
  */
 export default function SiteStatus({
   support,
@@ -47,46 +44,30 @@ export default function SiteStatus({
     case "checking":
       return null;
 
-    case "built-in": {
-      const site = SITES[support.surface];
-      return (
-        <SiteCard active site={site.label}>
-          <p className="text-muted-foreground">{site.description}</p>
-          <LinkOutRestore site={support.hostname} />
-        </SiteCard>
-      );
-    }
+    case "built-in":
+      return <KnownSite surface={support.surface} hostname={support.hostname} active />;
 
     case "opt-in": {
-      const site = SITES[support.surface];
-      const { origin, tabId } = support;
-      if (!support.enabled) {
-        return (
-          <SiteCard
-            active={false}
-            site={site.label}
-            action={
+      const { origin } = support;
+      return (
+        <KnownSite
+          surface={support.surface}
+          hostname={new URL(origin).hostname}
+          active={support.enabled}
+          action={
+            support.enabled ? (
+              <DisableButton origin={origin} onChange={onChange} />
+            ) : (
               <Button
                 size="xs"
-                onClick={() => settle(enableOrigin(origin, tabId, null), "enable", onChange)}
+                aria-label={`Enable on ${SITES[support.surface].label}`}
+                onClick={() => settle(enableKnownSite(origin), "enable", onChange)}
               >
                 Enable
               </Button>
-            }
-          >
-            <p className="text-muted-foreground">{site.description}</p>
-          </SiteCard>
-        );
-      }
-      return (
-        <SiteCard
-          active
-          site={site.label}
-          action={<DisableButton origin={origin} onChange={onChange} />}
-        >
-          <p className="text-muted-foreground">{site.description}</p>
-          <LinkOutRestore site={new URL(origin).hostname} />
-        </SiteCard>
+            )
+          }
+        />
       );
     }
 
@@ -95,10 +76,9 @@ export default function SiteStatus({
         <SiteCard
           active
           site={new URL(support.origin).hostname}
+          description={RUNS_MARIMO}
           action={<DisableButton origin={support.origin} onChange={onChange} />}
-        >
-          <p className="text-muted-foreground">{RUNS_MARIMO}</p>
-        </SiteCard>
+        />
       );
 
     case "unsupported":
@@ -110,7 +90,7 @@ export default function SiteStatus({
           </div>
         );
       }
-      return <EnableForm origin={support.origin} tabId={support.tabId} onChange={onChange} />;
+      return <EnableForm origin={support.origin} onChange={onChange} />;
   }
 }
 
@@ -123,43 +103,72 @@ function settle(task: Promise<unknown>, verb: "enable" | "disable", onChange: ()
     .finally(onChange);
 }
 
-/** The card for one site: whether the extension is active there, and what it does. */
+/** A site the extension knows by name. */
+function KnownSite({
+  surface,
+  hostname,
+  active,
+  action,
+}: {
+  surface: Surface;
+  hostname: string;
+  active: boolean;
+  action?: ReactNode;
+}) {
+  const site = SITES[surface];
+  return (
+    <SiteCard active={active} site={site.label} description={site.description} action={action}>
+      {active && <LinkOutRestore site={hostname} />}
+    </SiteCard>
+  );
+}
+
+/**
+ * The card for one site. The icon, title and description form one text column
+ * with the action centered against it; `children` are extra rows underneath,
+ * indented to line up with the text.
+ */
 function SiteCard({
   active,
   site,
+  description,
   action,
   children,
 }: {
   active: boolean;
   site: string;
+  description?: string;
   action?: ReactNode;
-  children: ReactNode;
+  children?: ReactNode;
 }) {
   const Icon = active ? CircleCheck : CircleSlash;
   return (
     <div
       className={
         active
-          ? "flex flex-col gap-1 rounded-lg border border-primary/30 bg-primary/8 px-3 py-2"
-          : "flex flex-col gap-1 rounded-lg border px-3 py-2"
+          ? "flex flex-col gap-1.5 rounded-lg border border-primary/30 bg-primary/8 px-3 py-2"
+          : "flex flex-col gap-1.5 rounded-lg border px-3 py-2"
       }
     >
-      <div className="flex items-center justify-between gap-2">
-        <span className="flex items-center gap-2">
-          <Icon
-            className={
-              active ? "size-4 shrink-0 text-primary" : "size-4 shrink-0 text-muted-foreground"
-            }
-            aria-hidden
-          />
+      <div className="flex items-center gap-2">
+        <Icon
+          className={
+            active
+              ? "mt-0.5 size-4 shrink-0 self-start text-primary"
+              : "mt-0.5 size-4 shrink-0 self-start text-muted-foreground"
+          }
+          aria-hidden
+        />
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span>
             {active ? "Active on " : "Not active on "}
             <strong className="font-semibold">{site}</strong>
           </span>
-        </span>
+          {description && <p className="text-muted-foreground">{description}</p>}
+        </div>
         {action}
       </div>
-      <div className="flex flex-col gap-1.5 pl-6">{children}</div>
+      {children && <div className="flex flex-col gap-1.5 pl-6">{children}</div>}
     </div>
   );
 }
@@ -169,6 +178,8 @@ function DisableButton({ origin, onChange }: { origin: string; onChange: () => v
     <Button
       variant="ghost"
       size="xs"
+      className="-mr-1 px-1.5"
+      aria-label={`Disable on ${new URL(origin).hostname}`}
       onClick={() => settle(disableOrigin(origin), "disable", onChange)}
     >
       Disable
@@ -176,15 +187,7 @@ function DisableButton({ origin, onChange }: { origin: string; onChange: () => v
   );
 }
 
-function EnableForm({
-  origin,
-  tabId,
-  onChange,
-}: {
-  origin: string;
-  tabId: number | null;
-  onChange: () => void;
-}) {
+function EnableForm({ origin, onChange }: { origin: string; onChange: () => void }) {
   const [flavor, setFlavor] = useState<Flavor>("gitlab");
 
   return (
@@ -205,7 +208,8 @@ function EnableForm({
         <Button
           size="sm"
           className="h-8"
-          onClick={() => settle(enableOrigin(origin, tabId, flavor), "enable", onChange)}
+          aria-label={`Enable on ${new URL(origin).hostname}`}
+          onClick={() => settle(enableSelfHosted(origin, flavor), "enable", onChange)}
         >
           Enable
         </Button>

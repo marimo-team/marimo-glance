@@ -29,7 +29,6 @@ describe("readActiveTabSupport", () => {
       surface: "colab",
       origin: "https://colab.research.google.com",
       enabled: false,
-      tabId: 7,
     });
 
     grantOrigins("https://colab.research.google.com/*");
@@ -44,7 +43,6 @@ describe("readActiveTabSupport", () => {
     expect(await readActiveTabSupport()).toEqual({
       kind: "self-hosted",
       origin: "https://git.example.com",
-      flavor: "github",
     });
   });
 
@@ -54,7 +52,6 @@ describe("readActiveTabSupport", () => {
     expect(await readActiveTabSupport()).toEqual({
       kind: "unsupported",
       origin: "https://example.com",
-      tabId: 7,
     });
   });
 
@@ -63,14 +60,12 @@ describe("readActiveTabSupport", () => {
     expect(await readActiveTabSupport()).toEqual({
       kind: "unsupported",
       origin: null,
-      tabId: null,
     });
 
     activeTab(undefined);
     expect(await readActiveTabSupport()).toEqual({
       kind: "unsupported",
       origin: null,
-      tabId: null,
     });
   });
 });

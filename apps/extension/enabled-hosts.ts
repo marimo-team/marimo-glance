@@ -1,13 +1,9 @@
 import { browser } from "wxt/browser";
-import { type BuiltInSurface, OPT_IN_ORIGINS } from "./hosts";
+import { type BuiltInSurface, isKnownOrigin, OPT_IN_ORIGINS } from "./hosts";
 
 const STORAGE_KEY = "enabledHosts";
 
-/**
- * The platforms a user can declare a self-hosted instance to be, named after
- * the built-in surface whose host serves it. Gists are absent because a gist
- * surface is not something an instance can be.
- */
+/** The platforms a self-hosted instance can be, named after the surface whose host serves it. */
 export type Flavor = Extract<BuiltInSurface, "github" | "gitlab">;
 
 export const FLAVORS: readonly Flavor[] = ["github", "gitlab"];
@@ -19,7 +15,7 @@ export const FLAVOR_LABELS: Record<Flavor, string> = {
 
 type EnabledHosts = Record<string, Flavor>;
 
-/** The match pattern for an origin, used for both permissions and registration. */
+/** The match pattern for an origin, for both permissions and registration. */
 export function originPattern(origin: string): string {
   return `${origin}/*`;
 }
@@ -29,48 +25,47 @@ async function readStored(): Promise<EnabledHosts> {
   return (stored[STORAGE_KEY] as EnabledHosts | undefined) ?? {};
 }
 
-async function grantedPatterns(): Promise<Set<string>> {
-  const { origins } = await browser.permissions.getAll();
-  return new Set(origins ?? []);
-}
-
-/** The opt-in sites the user has turned on. The grant alone records it. */
-export async function readEnabledOptInOrigins(): Promise<string[]> {
-  const granted = await grantedPatterns();
-  return OPT_IN_ORIGINS.filter((origin) => granted.has(originPattern(origin)));
+async function isGranted(origin: string): Promise<boolean> {
+  return browser.permissions.contains({ origins: [originPattern(origin)] });
 }
 
 /**
- * Enabled hosts whose permission is still granted, pruning any that are not.
+ * The origins enabled beyond the built-in sites: self-hosted instances with
+ * their flavor, and opt-in sites. The permission is the trust, so a stored
+ * entry without one is ignored. A known origin is never self-hosted: a second
+ * registration would start two runtimes on one page.
  *
- * The permission is the trust and storage only carries the flavor, so a user who
- * revokes access in browser settings must not keep a working entry here. The
- * pruned map is written back so the two stores converge instead of drifting.
+ * Read-only on purpose: an entry may be waiting on the permission prompt.
  */
-export async function readEnabledHosts(): Promise<EnabledHosts> {
+export async function readEnabledOrigins(): Promise<{
+  selfHosted: EnabledHosts;
+  optIn: string[];
+}> {
   const stored = await readStored();
-  const granted = await grantedPatterns();
+  const candidates = [
+    ...Object.keys(stored).filter((origin) => !isKnownOrigin(origin)),
+    ...OPT_IN_ORIGINS,
+  ];
+  const grants = await Promise.all(candidates.map(isGranted));
+  const granted = new Set(candidates.filter((_, index) => grants[index]));
 
-  const live: EnabledHosts = {};
+  const selfHosted: EnabledHosts = {};
   for (const [origin, flavor] of Object.entries(stored)) {
-    if (granted.has(originPattern(origin))) {
-      live[origin] = flavor;
-    }
+    if (granted.has(origin) && !isKnownOrigin(origin)) selfHosted[origin] = flavor;
   }
+  return { selfHosted, optIn: OPT_IN_ORIGINS.filter((origin) => granted.has(origin)) };
+}
 
-  if (Object.keys(live).length !== Object.keys(stored).length) {
-    await browser.storage.local.set({ [STORAGE_KEY]: live });
-  }
-  return live;
+/** Report changes to the stored instances, from any extension context. */
+export function watchEnabledHosts(onChange: () => void): void {
+  browser.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && STORAGE_KEY in changes) onChange();
+  });
 }
 
 /**
- * The flavor stored for an origin, read without consulting the permissions API,
- * which browsers do not expose to content scripts.
- *
- * Skipping the permission check is safe here: a content script only runs on a
- * non-built-in origin because a registration created under a granted permission
- * injected it, so the grant is implied by execution.
+ * The flavor stored for an origin. Skips the permission check because content
+ * scripts cannot call the permissions API, and running there implies the grant.
  */
 export async function storedFlavor(origin: string): Promise<Flavor | null> {
   const stored = await readStored();
@@ -85,7 +80,16 @@ export async function saveEnabledHost(origin: string, flavor: Flavor): Promise<v
 }
 
 export async function forgetEnabledHost(origin: string): Promise<void> {
+  await forgetEnabledHostsFor([originPattern(origin)]);
+}
+
+/** Forget the instances behind these match patterns, e.g. ones whose permission was revoked. */
+export async function forgetEnabledHostsFor(patterns: string[]): Promise<void> {
   const stored = await readStored();
-  delete stored[origin];
-  await browser.storage.local.set({ [STORAGE_KEY]: stored });
+  const kept = Object.fromEntries(
+    Object.entries(stored).filter(([origin]) => !patterns.includes(originPattern(origin))),
+  );
+  if (Object.keys(kept).length !== Object.keys(stored).length) {
+    await browser.storage.local.set({ [STORAGE_KEY]: kept });
+  }
 }
