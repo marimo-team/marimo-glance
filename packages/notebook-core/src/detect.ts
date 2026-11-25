@@ -67,6 +67,10 @@ export function isPythonPath(path: string): boolean {
   return path.endsWith(".py");
 }
 
+export function isIpynbPath(path: string): boolean {
+  return path.endsWith(".ipynb");
+}
+
 export function isMarimoNotebook(source: string): boolean {
   const aliases = new Set([DEFAULT_ALIAS]);
   const header = stripStringsAndComments(source.slice(0, DETECT_MAX_SIZE));

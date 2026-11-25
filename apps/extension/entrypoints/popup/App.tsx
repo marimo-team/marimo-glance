@@ -1,4 +1,5 @@
-import SupportBanner from "./SupportBanner";
+import { ISSUES_URL, PRIVACY_URL, REPO_URL } from "./links";
+import SiteStatus from "./SiteStatus";
 import { useSiteSupport } from "./useSiteSupport";
 
 export default function App() {
@@ -10,54 +11,33 @@ export default function App() {
         <img className="size-8 shrink-0" src="/icon/marimo.png" alt="marimo logo" />
         <h1 className="text-[15px] font-semibold">marimo Glance</h1>
       </div>
-      <p className="mt-3 text-muted-foreground">
-        See your marimo notebooks at a glance. Run them live on GitHub and gists, right in the page.
-      </p>
+      {support.kind === "unsupported" && (
+        <p className="mt-3 text-muted-foreground">
+          Run marimo notebooks right in the page on GitHub, gists, and GitLab. Open Jupyter
+          notebooks in molab.
+        </p>
+      )}
       <div className="mt-3">
-        <SupportBanner support={support} onChange={refresh} />
+        <SiteStatus support={support} onChange={refresh} />
       </div>
-      <div className="mt-3 rounded-lg border py-2.5 pr-3 pl-3.5">
-        <h2 className="mb-1.5 text-xs font-semibold tracking-[0.04em] text-muted-foreground uppercase">
-          How to use
-        </h2>
-        <ol className="list-decimal pl-4.5">
-          <li className="my-1">
-            Open a marimo <code>.py</code> notebook on GitHub or a gist.
-          </li>
-          <li className="my-1">
-            Click the{" "}
-            <strong className="font-semibold text-primary">Switch to interactive notebook</strong>{" "}
-            pill that appears.
-          </li>
-          <li className="my-1">
-            Run and edit it in your browser; click{" "}
-            <strong className="font-semibold text-primary">See original</strong> to return to the
-            source.
-          </li>
-        </ol>
-      </div>
-      <p className="mt-3 text-muted-foreground">
-        Your code runs locally in WebAssembly and is never uploaded. The one exception is{" "}
-        <strong>Open in molab</strong> from the notebook, which sends your code to molab servers.
-      </p>
-      <footer className="mt-3.5 flex gap-3.5 border-t pt-3">
-        <a
-          className="text-primary hover:underline"
-          href="https://github.com/marimo-team/marimo-glance"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Source code
-        </a>
-        <a
-          className="text-primary hover:underline"
-          href="https://github.com/marimo-team/marimo-glance/issues"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Report an issue
-        </a>
+      <footer className="mt-3 border-t pt-3">
+        <nav className="flex gap-3.5">
+          <FooterLink href={REPO_URL}>Source code</FooterLink>
+          <FooterLink href={ISSUES_URL}>Report an issue</FooterLink>
+          <FooterLink href={PRIVACY_URL}>Privacy</FooterLink>
+        </nav>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Runs in your browser. Nothing leaves it unless you open a notebook in molab.
+        </p>
       </footer>
     </div>
+  );
+}
+
+function FooterLink({ href, children }: { href: string; children: string }) {
+  return (
+    <a className="text-primary hover:underline" href={href} target="_blank" rel="noreferrer">
+      {children}
+    </a>
   );
 }

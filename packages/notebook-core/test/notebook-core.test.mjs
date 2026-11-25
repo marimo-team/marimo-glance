@@ -1,7 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { isMarimoNotebook, isPythonPath, playgroundUrl, PLAYGROUND_ORIGIN } from "../dist/index.js";
+import {
+  isIpynbPath,
+  isMarimoNotebook,
+  isPythonPath,
+  molabUrl,
+  playgroundUrl,
+  PLAYGROUND_ORIGIN,
+} from "../dist/index.js";
 
 test("recognizes a standard marimo notebook", () => {
   const source = "import marimo\n\napp = marimo.App()\n";
@@ -114,4 +121,16 @@ test("builds an embedded playground URL without losing the code hash", () => {
 
 test("exports the marimo playground origin", () => {
   assert.equal(PLAYGROUND_ORIGIN, "https://marimo.app");
+});
+
+test("identifies Jupyter notebook paths by extension", () => {
+  assert.equal(isIpynbPath("cookbook/demo.ipynb"), true);
+  assert.equal(isIpynbPath("demo.py"), false);
+});
+
+test("builds a molab import URL by appending the source URL to the molab origin", () => {
+  assert.equal(
+    molabUrl("https://github.com/o/r/blob/main/nb.ipynb"),
+    "https://molab.marimo.io/https://github.com/o/r/blob/main/nb.ipynb",
+  );
 });

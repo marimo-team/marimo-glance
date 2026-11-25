@@ -1,11 +1,12 @@
 # @marimo/host-github
 
-The `Host` that teaches the runtime about GitHub: both regular blob pages on `github.com` and gists on `gist.github.com`. Its only internal dependency is `@marimo/notebook-core`.
+The `Host` that teaches the runtime about GitHub: both regular blob pages on `github.com` and gists on `gist.github.com`. It also offers Jupyter notebooks on github.com to molab. Its only internal dependency is `@marimo/notebook-core`.
 
 ## What you can import
 
 - `githubHost` is the host itself. Its `matches` covers both surfaces, so you only need this one for all of GitHub.
-- URL helpers: `isBlobUrl`, `blobRawUrl` (turns a blob URL into its raw-source URL), and `isGistUrl`.
+- `githubNotebookLink` offers `.ipynb` blobs on github.com to molab, only for public repositories: `canImport` requests the repository without cookies, once per repository, which is exactly what molab will see. (GitHub only renders its public-repo meta tag for signed-out viewers, so the page cannot be trusted to say.) molab cannot fetch GitHub Enterprise or private repositories.
+- URL helpers: `isBlobUrl`, `isIpynbBlobUrl`, `blobRawUrl` (turns a blob URL into its raw-source URL), and `isGistUrl`.
 - DOM helpers: `findBlobAnchor`, `findGistPythonFile`, and `readGitHubTheme`.
 - The `GistFile` type.
 

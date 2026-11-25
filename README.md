@@ -19,6 +19,8 @@ The extension watches the pages you open on GitHub and gists. On a `.py` file it
 
 When it does find a notebook, it drops the **"Switch to interactive marimo notebook"** button in the bottom-right corner. Clicking it boots the notebook live through [marimo.app](https://marimo.app), running entirely in WebAssembly inside your browser, right where the code was. **"See original"** flips back to the raw source, and switching between the two never restarts the notebook once it is running.
 
+Jupyter notebooks get a lighter touch. On a `.ipynb` file in a public github.com repository the extension shows a dismissable **"Open in molab"** pill. It is only a link: [molab](https://molab.marimo.io) fetches the notebook and converts it to marimo itself, so nothing is rendered or converted in the page. The same pill is available on GitHub-backed Colab notebooks once you enable Colab from the extension popup.
+
 A few things worth knowing:
 
 - **Your code stays on your machine.** The notebook source is compressed into the page URL's fragment (the part after `#`) and handed straight to the in-browser WASM runtime. Browsers never send the fragment to a server, so your code, private repositories included, is never uploaded anywhere by the extension.
@@ -38,9 +40,10 @@ It's a pnpm + [Turborepo](https://turbo.build) monorepo. The rendering logic is 
 | `@marimo/extension-runtime` | Watches the page and puts up the opt-in switcher. Mounts the notebook, cleans it up, survives GitHub's soft navigations.   |
 | `@marimo/host-github`       | Teaches the runtime about `github.com` blobs and `gist.github.com`.                                                        |
 | `@marimo/host-gitlab`       | Teaches the runtime about `gitlab.com` blobs.                                                                              |
+| `@marimo/host-colab`        | Recognizes GitHub-backed Colab notebooks so the runtime can offer them to molab.                                           |
 | `apps/extension`            | The actual [WXT](https://wxt.dev) extension for Chrome and Firefox. It just wires a host to the runtime.                   |
 
-Supporting a new site means writing a small "host" that answers four questions (does this URL match, what's the source, where's the code element on the page, and optionally what's the page theme). The runtime does the rest, so you never have to touch it to add a site.
+Supporting a new site means writing a small adapter. To render marimo notebooks it is a "host" that answers four questions (does this URL match, what's the source, where's the code element on the page, and optionally what's the page theme). To offer Jupyter notebooks to molab it is a "notebook link" that answers one (what URL should molab import). The runtime does the rest, so you never have to touch it to add a site.
 
 ## Getting started
 

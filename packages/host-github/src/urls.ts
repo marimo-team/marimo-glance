@@ -1,4 +1,4 @@
-import { isPythonPath } from "@marimo/notebook-core";
+import { isIpynbPath, isPythonPath } from "@marimo/notebook-core";
 
 const GIST_HOST = "gist.github.com";
 
@@ -20,7 +20,22 @@ function pathSegments(url: URL): string[] {
  * extension's host permissions rather than by this predicate.
  */
 export function isBlobUrl(url: URL): boolean {
-  return pathSegments(url)[BLOB_ROUTE_INDEX] === "blob" && isPythonPath(url.pathname);
+  return hasBlobRoute(url) && isPythonPath(url.pathname);
+}
+
+/** A GitHub file view for a Jupyter notebook, by the same route shape as `isBlobUrl`. */
+export function isIpynbBlobUrl(url: URL): boolean {
+  return hasBlobRoute(url) && isIpynbPath(url.pathname);
+}
+
+function hasBlobRoute(url: URL): boolean {
+  return pathSegments(url)[BLOB_ROUTE_INDEX] === "blob";
+}
+
+/** The repository a blob view belongs to: `https://github.com/owner/repo`. */
+export function blobRepoUrl(url: URL): string {
+  const [owner, repo] = pathSegments(url);
+  return `${url.origin}/${owner}/${repo}`;
 }
 
 /**

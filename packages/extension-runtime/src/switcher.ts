@@ -1,5 +1,6 @@
 import type { View } from "@marimo/notebook-core";
 import { className, EXT_CSS_CLASS_PREFIX } from "@marimo/notebook-core";
+import { injectStyles, mountFloatingRoot } from "./floating.js";
 import type { NotebookView } from "./notebook-view.js";
 
 const VIEW_STORAGE_KEY = "mv-view";
@@ -34,10 +35,8 @@ export function savedView(): View {
  * view. On a CSP block it falls back to the original code and says so.
  */
 export function installSwitcher(options: SwitcherOptions): Switcher {
-  ensureStyles();
-
-  const root = document.createElement("div");
-  root.className = className("switcher");
+  injectStyles(STYLE_ELEMENT_ID, SWITCHER_CSS);
+  const root = mountFloatingRoot("switcher");
 
   const button = document.createElement("button");
   button.type = "button";
@@ -51,9 +50,7 @@ export function installSwitcher(options: SwitcherOptions): Switcher {
   hint.className = className("switcher__hint");
   hint.textContent = "marimo notebook detected · runs in your browser (WASM)";
 
-  root.append(hint);
-  root.append(button);
-  document.body.append(root);
+  root.append(hint, button);
 
   let mode: Mode = "prompt";
   let collapseTimer: ReturnType<typeof setTimeout> | undefined;
@@ -137,30 +134,7 @@ export function installSwitcher(options: SwitcherOptions): Switcher {
   };
 }
 
-/**
- * Inject the switcher stylesheet once per page. Content scripts share the
- * host's document, so an id guard keeps re-injection across navigations cheap.
- */
-function ensureStyles(): void {
-  if (document.getElementById(STYLE_ELEMENT_ID)) return;
-  const style = document.createElement("style");
-  style.id = STYLE_ELEMENT_ID;
-  style.textContent = SWITCHER_CSS;
-  document.head.append(style);
-}
-
 const SWITCHER_CSS = `
-.${EXT_CSS_CLASS_PREFIX}-switcher {
-	position: fixed;
-	right: 16px;
-	bottom: 16px;
-	z-index: 2147483000;
-	display: flex;
-	flex-direction: column;
-	align-items: flex-end;
-	gap: 6px;
-	font: 500 13px/1.4 system-ui, sans-serif;
-}
 .${EXT_CSS_CLASS_PREFIX}-switcher__button {
 	cursor: pointer;
 	border: 1px solid rgba(0, 0, 0, 0.15);

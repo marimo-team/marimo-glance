@@ -1,39 +1,26 @@
 import { browser } from "wxt/browser";
-import { type Flavor, forgetEnabledHost, originPattern, saveEnabledHost } from "@/enabled-hosts";
-import { injectContentScript, syncRegistrations } from "@/registrations";
+import { type Flavor, originPattern, sendEnabledHostChange } from "@/enabled-hosts";
 
-/**
- * Grant access to an origin and start rendering notebooks on it.
- *
- * Order matters: nothing is stored until the user has actually granted the
- * permission, and the script is registered before it is injected so a later page
- * load in that tab is covered too. Returns false when the user dismisses the
- * browser's permission prompt, leaving no state behind.
- */
-export async function enableHost(
-  origin: string,
-  flavor: Flavor,
-  tabId: number | null,
-): Promise<boolean> {
-  const granted = await browser.permissions.request({
-    origins: [originPattern(origin)],
-  });
-  if (!granted) return false;
+// These only write the inputs the background script registers from, the
+// permission and the stored platform, because the permission prompt can close
+// the popup. Each starts its work before any `await`: Firefox only honours a
+// permission request made directly in the click handler.
 
-  await saveEnabledHost(origin, flavor);
-  await syncRegistrations();
-  if (tabId !== null) {
-    await injectContentScript(tabId);
-  }
-  return true;
+function requestOrigin(origin: string): Promise<boolean> {
+  return browser.permissions.request({ origins: [originPattern(origin)] });
 }
 
-/**
- * Reverse of `enableHost`, in reverse order: stop acting on the origin before
- * dropping the permission that allowed it.
- */
-export async function disableHost(origin: string): Promise<void> {
-  await forgetEnabledHost(origin);
-  await syncRegistrations();
+export async function enableKnownSite(origin: string): Promise<void> {
+  await requestOrigin(origin);
+}
+
+export async function enableSelfHosted(origin: string, flavor: Flavor): Promise<void> {
+  const granted = requestOrigin(origin);
+  void sendEnabledHostChange({ type: "save-enabled-host", origin, flavor });
+  if (!(await granted)) await sendEnabledHostChange({ type: "forget-enabled-host", origin });
+}
+
+export async function disableOrigin(origin: string): Promise<void> {
+  await sendEnabledHostChange({ type: "forget-enabled-host", origin });
   await browser.permissions.remove({ origins: [originPattern(origin)] });
 }

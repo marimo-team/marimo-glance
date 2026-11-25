@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { blobRawUrl, isBlobUrl, isGistUrl } from "../dist/index.js";
+import { blobRawUrl, isBlobUrl, isGistUrl, isIpynbBlobUrl } from "../dist/index.js";
 
 test("isBlobUrl accepts a github.com .py blob view", () => {
   assert.equal(isBlobUrl(new URL("https://github.com/o/r/blob/main/nb.py")), true);
@@ -64,4 +64,13 @@ test("isGistUrl rejects listing and discovery routes", () => {
 
 test("isGistUrl rejects github.com and other hosts", () => {
   assert.equal(isGistUrl(new URL("https://github.com/o/r")), false);
+});
+
+test("isIpynbBlobUrl accepts a .ipynb blob view", () => {
+  assert.equal(isIpynbBlobUrl(new URL("https://github.com/o/r/blob/main/nb.ipynb")), true);
+});
+
+test("isIpynbBlobUrl rejects Python and non-blob notebook paths", () => {
+  assert.equal(isIpynbBlobUrl(new URL("https://github.com/o/r/blob/main/nb.py")), false);
+  assert.equal(isIpynbBlobUrl(new URL("https://github.com/o/r/tree/main/nb.ipynb")), false);
 });

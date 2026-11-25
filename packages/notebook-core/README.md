@@ -7,12 +7,13 @@ Keeping it this clean is the point: it could just as easily back a different too
 ## What you can import
 
 - `isMarimoNotebook(source)` tells you whether some Python source is a marimo notebook. It looks for a real top-level `app = marimo.App(...)` (whitespace and a type annotation are fine, and it honors an `import marimo as <alias>`) within the first 16 KB, returning as soon as it finds a match. A stray mention of marimo in a comment, a string, or a nested function won't fool it.
-- `isPythonPath(path)` is the obvious `.py` check.
+- `isPythonPath(path)` and `isIpynbPath(path)` are the obvious extension checks.
 - `playgroundUrl(source, { ref?, theme? })` builds the marimo.app embed URL, compressing the notebook into the `#code/` hash.
 - `renderNotebookAsIframe(source, options)` gives you the notebook iframe as a DOM node.
+- `molabUrl(sourceUrl)` builds the molab URL that imports a notebook from its public URL and converts it to marimo.
 - `className(...)` and `EXT_CSS_CLASS_PREFIX` keep our CSS class names namespaced so they don't collide with the host page.
 
-Types you'll want: `Host`, `PlaygroundOptions`, `RenderOptions`, `Theme`, `View`.
+Types you'll want: `Host`, `NotebookLink`, `PlaygroundOptions`, `RenderOptions`, `Theme`, `View`.
 
 ## The `Host` contract
 
@@ -29,3 +30,16 @@ interface Host {
 ```
 
 `findAnchor()` returns the code element the runtime hides while the notebook is showing. If the page isn't ready yet, return `null` and the runtime will try again on the next tick.
+
+## The `NotebookLink` contract
+
+A notebook link is for pages the extension does not render, only offers to molab:
+
+```ts
+interface NotebookLink {
+  sourceUrl(url: URL): string | null; // the URL molab imports, or null
+  canImport?(sourceUrl: string): Promise<boolean>; // optional, checked once per notebook
+}
+```
+
+Return `null` from `sourceUrl` for anything molab could not fetch by its URL alone; it runs on every observer tick, so keep it cheap. When only a request can tell, such as whether a repository is private, implement `canImport`.
