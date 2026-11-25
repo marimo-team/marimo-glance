@@ -85,7 +85,7 @@ Passes are idempotent and keyed: a pass for the page already being fetched or lo
   - Blob: source from `/blob/` → `/raw/` conversion
   - Gist: source + anchor from DOM (first `.py` file)
   - `readTheme()` from `<html data-color-mode>`
-- `githubNotebookLink`: NotebookLink for `.ipynb` blobs on github.com, only when the page's repo-visibility meta tag says public
+- `githubNotebookLink`: NotebookLink for `.ipynb` blobs on github.com, only for public repos (`canImport` asks github.com for the repo without cookies)
 - Helpers: `isBlobUrl()`, `isIpynbBlobUrl()`, `isGistUrl()`, `blobRawUrl()`, `findBlobAnchor()`, `findGistPythonFile()`, `readGitHubTheme()`
 
 ## Link-outs: notebooks we do not render
@@ -94,15 +94,15 @@ Jupyter `.ipynb` notebooks (github.com blobs in public repos, GitHub-backed Cola
 
 ```typescript
 interface NotebookLink {
-  id: string;
-  sourceUrl(url: URL): string | null; // URL molab imports, or null
+  sourceUrl(url: URL): string | null; // URL molab imports, or null; runs every tick, keep it cheap
+  canImport?(sourceUrl: string): Promise<boolean>; // optional: can molab really fetch it? checked once per notebook
 }
 ```
 
 - `createLinkOut(link, { dismissals })` (in `extension-runtime`) is the controller; `molabUrl()` in `notebook-core` builds the link.
 - The pill's × discloses two scopes: hide this notebook, or hide on the whole site (the page's hostname). Dismissals go through a `DismissalStore` injected by the extension (`apps/extension/link-out-dismissals.ts`, on `storage.local`), keeping the runtime free of browser APIs. The store's `subscribe` relays `storage.onChanged`, so a dismissal in one tab, or the popup's "Show again", applies to open tabs without a reload.
 - In `apps/extension/entrypoints/content.ts` a site has a `host`, a `link`, or both (github.com has both). Self-hosted instances get a host only: molab cannot fetch from them.
-- Private notebooks are skipped where the page says so: github.com reads `<meta name="octolytics-dimension-repository_public">`. Drive-backed Colab notebooks are skipped because they are private by default. A private GitHub repo opened through Colab cannot be told apart, so the pill still shows there.
+- Private notebooks are skipped where they can be detected: on github.com `canImport` sends a cookie-less `HEAD` for the repo, once per repo per page load (the page itself cannot say, since GitHub only renders its public-repo meta tag for signed-out viewers). Drive-backed Colab notebooks are skipped because they are private by default. A private GitHub repo opened through Colab cannot be told apart, so the pill still shows there.
 
 ## Sites: built-in, opt-in, and self-hosted
 
@@ -112,7 +112,7 @@ interface NotebookLink {
 - **Opt-in** (`OPT_IN_SITES`: colab.research.google.com): known sites the user enables from the popup. They stay out of the install-time permissions because a new static host permission makes Chrome disable the extension on update until the user re-approves. The permission grant alone records the choice.
 - **Self-hosted**: any other origin the user enables as a GitHub or GitLab instance. `storage.local` maps the origin to its platform (`enabled-hosts.ts`).
 
-Opt-in and self-hosted origins are requested through `optional_host_permissions` and get the content script via `registrations.ts`, which the background script re-syncs at startup. `activeTab` lets the popup read the current tab's URL before the site is enabled.
+Opt-in and self-hosted origins are requested through `optional_host_permissions` and get the content script via `registrations.ts`, which the background script keeps a function of the granted permissions and the stored instances: it re-syncs at startup, on install or update, on every permission grant or removal, and whenever `enabledHosts` changes, and injects into open tabs of newly registered origins. The popup only writes those two inputs, because the browser's permission prompt can close it. It requests before any `await`, since Firefox only honours a request made directly in the click handler. `activeTab` lets the popup read the current tab's URL before the site is enabled.
 
 ## Commands
 

@@ -37,9 +37,9 @@ A notebook link is for pages the extension does not render, only offers to molab
 
 ```ts
 interface NotebookLink {
-  id: string;
   sourceUrl(url: URL): string | null; // the URL molab imports, or null
+  canImport?(sourceUrl: string): Promise<boolean>; // optional, checked once per notebook
 }
 ```
 
-Return `null` for anything molab could not fetch, including notebooks the page shows to be private.
+Return `null` from `sourceUrl` for anything molab could not fetch by its URL alone; it runs on every observer tick, so keep it cheap. When only a request can tell, such as whether a repository is private, implement `canImport`.

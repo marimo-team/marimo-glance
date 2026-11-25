@@ -27,11 +27,11 @@ See the [marimo website](https://marimo.io) for marimo.app's own terms and priva
 
 ## Opening Jupyter notebooks in molab
 
-On a Jupyter `.ipynb` notebook in a public github.com repository, or on a GitHub-backed notebook on colab.research.google.com once you have enabled Colab, the extension shows an "Open in molab" button. It is a plain link: nothing is sent anywhere until you click it, and the extension itself makes no request.
+On a Jupyter `.ipynb` notebook in a public github.com repository, or on a GitHub-backed notebook on colab.research.google.com once you have enabled Colab, the extension shows an "Open in molab" button. It is a plain link: nothing is sent to molab until you click it.
 
 Clicking opens `https://molab.marimo.io/<the notebook's URL>` in a new tab. molab is operated by the marimo team, so it learns the notebook URL you chose to open, and it fetches and converts that notebook itself. Query strings and fragments are not included. Like any site you visit, molab also receives your molab cookies with that request, so if you are signed in to molab it can associate the URL with your account.
 
-On github.com the button only appears when the page says the repository is public. Colab pages do not say, so on Colab the button can also appear for a notebook from a private GitHub repository; clicking it then sends that repository's owner, name, and file path to molab, which cannot import it.
+On github.com the button only appears for a public repository. To check, the extension sends one request per repository to github.com itself, for the repository's home page (`https://github.com/<owner>/<repo>`), without your cookies, exactly as molab would see it: if GitHub answers, the repository is public. The page cannot tell the extension this, because GitHub only marks a repository as public for signed-out visitors. The request goes only to github.com, which already serves the page you are on, and carries nothing beyond the repository's owner and name. Colab pages offer no such check, so on Colab the button can also appear for a notebook from a private GitHub repository; clicking it then sends that repository's owner, name, and file path to molab, which cannot import it.
 
 ## What is stored locally
 

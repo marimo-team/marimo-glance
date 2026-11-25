@@ -5,7 +5,7 @@ The `Host` that teaches the runtime about GitHub: both regular blob pages on `gi
 ## What you can import
 
 - `githubHost` is the host itself. Its `matches` covers both surfaces, so you only need this one for all of GitHub.
-- `githubNotebookLink` offers `.ipynb` blobs to molab, only on github.com and only when the page's `octolytics-dimension-repository_public` meta tag says the repository is public. molab cannot fetch GitHub Enterprise or private repositories.
+- `githubNotebookLink` offers `.ipynb` blobs on github.com to molab, only for public repositories: `canImport` requests the repository without cookies, once per repository, which is exactly what molab will see. (GitHub only renders its public-repo meta tag for signed-out viewers, so the page cannot be trusted to say.) molab cannot fetch GitHub Enterprise or private repositories.
 - URL helpers: `isBlobUrl`, `isIpynbBlobUrl`, `blobRawUrl` (turns a blob URL into its raw-source URL), and `isGistUrl`.
 - DOM helpers: `findBlobAnchor`, `findGistPythonFile`, and `readGitHubTheme`.
 - The `GistFile` type.
