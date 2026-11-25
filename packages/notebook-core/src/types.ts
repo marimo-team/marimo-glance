@@ -30,13 +30,18 @@ export interface Host {
  * so no source, anchor, or theme is needed.
  */
 export interface NotebookLink {
-  id: string;
   /**
    * The URL molab imports the notebook from, or null when the page is not a
-   * notebook molab can fetch (including one the link can tell is private).
-   * Query and hash are dropped so the same notebook always yields the same URL.
+   * notebook molab could fetch. Query and hash are dropped so the same notebook
+   * always yields the same URL. Called on every observer tick, so keep it cheap.
    */
   sourceUrl(url: URL): string | null;
+  /**
+   * Whether molab can actually fetch `sourceUrl`, for a link that cannot tell
+   * from the URL alone (e.g. a private repo). Checked once per notebook before
+   * the pill is offered; a rejection counts as no.
+   */
+  canImport?(sourceUrl: string): Promise<boolean>;
 }
 
 export interface RenderOptions extends PlaygroundOptions {}

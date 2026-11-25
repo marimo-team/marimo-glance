@@ -44,15 +44,3 @@ export function readGitHubTheme(doc: Document): Theme {
   const mode = doc.documentElement.dataset.colorMode;
   return mode === "light" || mode === "dark" ? mode : "system";
 }
-
-/**
- * Whether the page belongs to a public repository, read from the analytics meta
- * tag GitHub renders on repo pages. A missing tag counts as private, so a markup
- * change hides the molab pill instead of offering private repos to molab.
- */
-export function isPublicRepoPage(doc: Document): boolean {
-  const meta = doc.querySelector<HTMLMetaElement>(
-    'meta[name="octolytics-dimension-repository_public"]',
-  );
-  return meta?.content === "true";
-}

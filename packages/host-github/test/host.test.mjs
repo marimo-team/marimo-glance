@@ -65,34 +65,61 @@ test("readTheme maps GitHub's color-mode attribute, defaulting to system", () =>
   assert.equal(githubHost.readTheme(), "system");
 });
 
-/** A github.com page whose repo-visibility meta tag reads `visibility`, or has none. */
-function installRepoPage(url, visibility) {
-  const dom = installDom(url);
-  if (visibility !== undefined) {
-    const meta = dom.window.document.createElement("meta");
-    meta.name = "octolytics-dimension-repository_public";
-    meta.content = String(visibility === "public");
-    dom.window.document.head.append(meta);
-  }
-  return dom;
-}
-
 const IPYNB_URL = "https://github.com/o/r/blob/main/a/nb.ipynb";
 
-test("githubNotebookLink yields a public notebook's blob URL without query or hash", () => {
-  installRepoPage(`${IPYNB_URL}?plain=1#L3`, "public");
-  assert.equal(githubNotebookLink.sourceUrl(new URL(location.href)), IPYNB_URL);
-});
+/** Answer repo checks from `statuses` (repo URL to HTTP status), recording each request. */
+function stubRepos(statuses) {
+  const requests = [];
+  globalThis.fetch = async (input, init) => {
+    requests.push({ url: String(input), method: init?.method, credentials: init?.credentials });
+    const status = statuses[String(input)];
+    if (status === undefined) throw new TypeError("Failed to fetch");
+    return { ok: status >= 200 && status < 300, status };
+  };
+  return requests;
+}
 
-test("githubNotebookLink skips private repos, and pages that do not say", () => {
-  installRepoPage(IPYNB_URL, "private");
-  assert.equal(githubNotebookLink.sourceUrl(new URL(location.href)), null);
-
-  installRepoPage(IPYNB_URL, undefined);
-  assert.equal(githubNotebookLink.sourceUrl(new URL(location.href)), null);
+test("githubNotebookLink yields a notebook's blob URL without query or hash", () => {
+  installDom();
+  assert.equal(githubNotebookLink.sourceUrl(new URL(`${IPYNB_URL}?plain=1#L3`)), IPYNB_URL);
 });
 
 test("githubNotebookLink skips GitHub Enterprise, which molab cannot fetch", () => {
-  installRepoPage("https://github.company.com/o/r/blob/main/nb.ipynb", "public");
-  assert.equal(githubNotebookLink.sourceUrl(new URL(location.href)), null);
+  installDom();
+  assert.equal(
+    githubNotebookLink.sourceUrl(new URL("https://github.company.com/o/r/blob/main/nb.ipynb")),
+    null,
+  );
+});
+
+test("githubNotebookLink checks the repo without the viewer's cookies", async () => {
+  const requests = stubRepos({ "https://github.com/o/r": 200 });
+
+  assert.equal(await githubNotebookLink.canImport(IPYNB_URL), true);
+  assert.deepEqual(requests, [
+    { url: "https://github.com/o/r", method: "HEAD", credentials: "omit" },
+  ]);
+});
+
+test("githubNotebookLink refuses a repo that is private or gone", async () => {
+  stubRepos({ "https://github.com/o/private": 404 });
+
+  assert.equal(
+    await githubNotebookLink.canImport("https://github.com/o/private/blob/main/nb.ipynb"),
+    false,
+  );
+});
+
+test("githubNotebookLink checks each repo once, but retries a failed check", async () => {
+  stubRepos({});
+  const flaky = "https://github.com/o/flaky/blob/main/nb.ipynb";
+  await assert.rejects(githubNotebookLink.canImport(flaky));
+
+  const requests = stubRepos({ "https://github.com/o/flaky": 200 });
+  assert.equal(await githubNotebookLink.canImport(flaky), true);
+  assert.equal(
+    await githubNotebookLink.canImport("https://github.com/o/flaky/blob/main/other.ipynb"),
+    true,
+  );
+  assert.equal(requests.length, 1);
 });

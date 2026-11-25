@@ -1,15 +1,13 @@
 import type { Host, Theme } from "@marimo/notebook-core";
 import { isMarimoNotebook } from "@marimo/notebook-core";
-import { type Controller, createController } from "./controller.js";
+import { type Controller, type ControllerOptions, createController } from "./controller.js";
 import { createNotebookView } from "./notebook-view.js";
 import { installSwitcher, type Switcher, savedView } from "./switcher.js";
 import { resolveTheme } from "./theme.js";
 
-export interface RuntimeOptions {
+export interface RuntimeOptions extends Pick<ControllerOptions, "schedule"> {
   /** Provenance tag forwarded to the playground URL as `ref`. */
   ref?: string;
-  /** Defer a coalesced reconcile pass. Defaults to `requestAnimationFrame`. */
-  schedule?: (callback: () => void) => void;
   /** Milliseconds to wait for the iframe before treating it as blocked. */
   loadTimeoutMs?: number;
 }
@@ -20,18 +18,14 @@ function pageKey(url: URL): string {
 }
 
 /**
- * A host-agnostic reconcile-on-observe controller. It watches the page and,
- * whenever the page settles into a marimo notebook the host recognises, mounts
- * the rendered notebook in place of the source. Every reconcile pass is
- * idempotent and keyed on the URL, so repeated observer ticks are cheap and a
- * same-page re-render that wipes the injection is repaired on the next tick.
+ * Mounts the rendered notebook in place of the source whenever the page settles
+ * into a marimo notebook the host recognises. Passes are idempotent and keyed
+ * on the URL, so a re-render that wipes the injection is repaired on the next tick.
  */
 export function createRuntime(host: Host, options: RuntimeOptions = {}): Controller {
   let injectedAgainst: HTMLElement | null = null;
   let handledKey: string | null = null;
-  // The page whose source is being fetched. Passes for the same page wait on
-  // that fetch instead of starting their own; a pass that resumes to find the
-  // claim moved on (navigation, reset, stop) drops its result.
+  // The page whose source is being fetched (see `ControllerOptions.reset`).
   let fetchingKey: string | null = null;
   let teardown: (() => void) | null = null;
 
@@ -44,8 +38,7 @@ export function createRuntime(host: Host, options: RuntimeOptions = {}): Control
   }
 
   async function reconcile(): Promise<void> {
-    // Self-heal: a same-page re-render can detach our injection without any
-    // navigation, so drop stale state before deciding what to do.
+    // A same-page re-render can detach our injection without any navigation.
     if (injectedAgainst && !injectedAgainst.isConnected) reset();
 
     const url = new URL(window.location.href);
@@ -83,10 +76,9 @@ export function createRuntime(host: Host, options: RuntimeOptions = {}): Control
 }
 
 /**
- * Wire the lazy notebook view to the floating switcher and return a teardown
- * that removes both and restores the original code element. The switcher starts
- * in the persisted view (original by default, so the notebook is opt-in) and
- * handles the CSP fallback for the view it drives.
+ * Wire the notebook view to the floating switcher; the teardown restores the
+ * original code element. The switcher starts in the saved view, the original
+ * code by default, so the notebook is opt-in.
  */
 function inject(
   code: HTMLElement,

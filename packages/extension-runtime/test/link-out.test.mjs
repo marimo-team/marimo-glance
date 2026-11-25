@@ -7,7 +7,6 @@ import { installDom } from "./dom.mjs";
 const NOTEBOOK_URL = "https://github.com/o/r/blob/main/nb.ipynb";
 
 const link = {
-  id: "test",
   sourceUrl: (url) => (url.pathname.endsWith(".ipynb") ? `${url.origin}${url.pathname}` : null),
 };
 
@@ -309,6 +308,59 @@ test("an unreadable store hides the pill once instead of retrying every tick", a
 
   assert.equal(pill(), null);
   assert.equal(dismissals.lookups, 1);
+  linkOut.stop();
+});
+
+test("a notebook the link says molab cannot import gets no pill, and is checked once", async () => {
+  installDom(NOTEBOOK_URL);
+  const checked = [];
+  const privateLink = {
+    ...link,
+    canImport: async (sourceUrl) => {
+      checked.push(sourceUrl);
+      return false;
+    },
+  };
+  const linkOut = createLinkOut(privateLink, { dismissals: memoryDismissals() });
+
+  await linkOut.syncNow();
+  await linkOut.syncNow();
+
+  assert.equal(pill(), null);
+  assert.deepEqual(checked, [NOTEBOOK_URL]);
+  linkOut.stop();
+});
+
+test("an importable notebook gets the pill once the check passes", async () => {
+  installDom(NOTEBOOK_URL);
+  const linkOut = createLinkOut(
+    { ...link, canImport: async () => true },
+    { dismissals: memoryDismissals() },
+  );
+
+  await linkOut.syncNow();
+
+  assert.ok(pill());
+  linkOut.stop();
+});
+
+test("a failed import check hides the pill rather than guessing", async (t) => {
+  installDom(NOTEBOOK_URL);
+  const logged = t.mock.method(console, "error", () => {});
+  const linkOut = createLinkOut(
+    {
+      ...link,
+      canImport: async () => {
+        throw new TypeError("Failed to fetch");
+      },
+    },
+    { dismissals: memoryDismissals() },
+  );
+
+  await linkOut.syncNow();
+
+  assert.equal(pill(), null);
+  assert.equal(logged.mock.callCount(), 1);
   linkOut.stop();
 });
 

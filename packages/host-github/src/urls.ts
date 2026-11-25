@@ -32,6 +32,12 @@ function hasBlobRoute(url: URL): boolean {
   return pathSegments(url)[BLOB_ROUTE_INDEX] === "blob";
 }
 
+/** The repository a blob view belongs to: `https://github.com/owner/repo`. */
+export function blobRepoUrl(url: URL): string {
+  const [owner, repo] = pathSegments(url);
+  return `${url.origin}/${owner}/${repo}`;
+}
+
 /**
  * Derive the raw-source URL for a blob view by swapping the `blob` route segment
  * for `raw`. `github.com` serves `/raw/` itself (redirecting to

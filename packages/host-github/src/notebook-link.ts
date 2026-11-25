@@ -1,8 +1,10 @@
 import type { NotebookLink } from "@marimo/notebook-core";
-import { isPublicRepoPage } from "./dom.js";
-import { isIpynbBlobUrl } from "./urls.js";
+import { blobRepoUrl, isIpynbBlobUrl } from "./urls.js";
 
 const GITHUB_HOST = "github.com";
+
+/** One check per repo for the page's lifetime; a failed check is retried. */
+const publicRepos = new Map<string, Promise<boolean>>();
 
 /**
  * A Jupyter notebook in a public github.com repository, which molab imports
@@ -11,11 +13,30 @@ const GITHUB_HOST = "github.com";
  * to molab for nothing.
  */
 export const githubNotebookLink: NotebookLink = {
-  id: "github-ipynb",
-
   sourceUrl(url) {
-    const importable =
-      url.hostname === GITHUB_HOST && isIpynbBlobUrl(url) && isPublicRepoPage(document);
-    return importable ? `${url.origin}${url.pathname}` : null;
+    return url.hostname === GITHUB_HOST && isIpynbBlobUrl(url)
+      ? `${url.origin}${url.pathname}`
+      : null;
+  },
+
+  canImport(sourceUrl) {
+    const repo = blobRepoUrl(new URL(sourceUrl));
+    let check = publicRepos.get(repo);
+    if (!check) {
+      check = isPublicRepo(repo);
+      publicRepos.set(repo, check);
+      check.catch(() => publicRepos.delete(repo));
+    }
+    return check;
   },
 };
+
+/**
+ * Whether the repository loads without the viewer's session, which is exactly
+ * what molab sees. The page cannot say: GitHub only renders its public-repo meta
+ * tag for signed-out viewers.
+ */
+async function isPublicRepo(repo: string): Promise<boolean> {
+  const response = await fetch(repo, { method: "HEAD", credentials: "omit" });
+  return response.ok;
+}

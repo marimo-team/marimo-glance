@@ -11,19 +11,14 @@ export interface ControllerOptions {
   /** Bring the page in step with what it currently shows. Must be idempotent. */
   reconcile(): Promise<void>;
   /**
-   * Remove anything mounted and forget all progress, including work in flight:
-   * a pass that resumes after an `await` must find its claim gone and give up.
+   * Remove anything mounted and forget all progress, including work in flight.
+   * Passes claim a key before awaiting and drop their result if the claim moved
+   * on (navigation, reset, stop); same-key passes wait instead of restarting.
    */
   reset(): void;
-  /**
-   * Change sources beyond DOM mutations, e.g. storage. Called on `start` with a
-   * trigger that schedules a pass; returns the matching unsubscribe.
-   */
+  /** Extra change sources beyond DOM mutations, e.g. storage. Returns the unsubscribe. */
   watch?(trigger: () => void): () => void;
-  /**
-   * Defer a coalesced pass. Defaults to `requestAnimationFrame`. Injectable so
-   * tests can drive scheduling deterministically.
-   */
+  /** Defer a coalesced pass. Defaults to `requestAnimationFrame`; injectable for tests. */
   schedule?: (callback: () => void) => void;
 }
 

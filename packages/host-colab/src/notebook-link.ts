@@ -1,5 +1,4 @@
-import type { NotebookLink } from "@marimo/notebook-core";
-import { isIpynbPath } from "@marimo/notebook-core";
+import { isIpynbPath, type NotebookLink } from "@marimo/notebook-core";
 
 const COLAB_HOST = "colab.research.google.com";
 
@@ -15,8 +14,6 @@ const BLOB_ROUTE_INDEX = 3;
  * one without a request, so the pill still shows there and molab's import fails.
  */
 export const colabNotebookLink: NotebookLink = {
-  id: "colab",
-
   sourceUrl(url) {
     if (url.hostname !== COLAB_HOST) return null;
 
