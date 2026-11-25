@@ -123,3 +123,12 @@ test("githubNotebookLink checks each repo once, but retries a failed check", asy
   );
   assert.equal(requests.length, 1);
 });
+
+test("githubNotebookLink does not take a rate limit or outage for a private repo", async () => {
+  const busy = "https://github.com/o/busy/blob/main/nb.ipynb";
+  stubRepos({ "https://github.com/o/busy": 429 });
+  await assert.rejects(githubNotebookLink.canImport(busy), /429/);
+
+  stubRepos({ "https://github.com/o/busy": 200 });
+  assert.equal(await githubNotebookLink.canImport(busy), true);
+});

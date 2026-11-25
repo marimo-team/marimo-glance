@@ -65,24 +65,31 @@ export function createLinkOut(link: NotebookLink, options: LinkOutOptions): Cont
 
     const notebook = { sourceUrl, site: window.location.hostname };
     lookupFor = sourceUrl;
-    const [dismissed, importable] = await Promise.all([
-      dismissals.isDismissed(notebook).catch((error: unknown) => {
-        // Storage is unreadable, typically because the extension was reloaded.
-        // Stay hidden rather than resurface a pill the viewer may have hidden.
-        console.error("[marimo-glance] failed to read molab pill dismissals", error);
-        return true;
-      }),
-      link.canImport?.(sourceUrl).catch((error: unknown) => {
-        console.error("[marimo-glance] failed to check whether molab can import", error);
-        return false;
-      }) ?? true,
-    ]);
+    const offered = await isOffered(notebook);
     if (lookupFor !== sourceUrl) return;
     lookupFor = null;
+    // A soft navigation landed during the lookup, before the observer saw it.
+    if (link.sourceUrl(new URL(window.location.href)) !== sourceUrl) return reconcile();
     settledFor = sourceUrl;
 
-    if (dismissed || !importable) hidePill();
+    if (!offered) hidePill();
     else if (!pill) showPill(notebook);
+  }
+
+  /** Dismissals first, so a hidden notebook never costs a `canImport` check. */
+  async function isOffered(notebook: LinkedNotebook): Promise<boolean> {
+    const dismissed = await dismissals.isDismissed(notebook).catch((error: unknown) => {
+      // Storage is unreadable, typically because the extension was reloaded.
+      // Stay hidden rather than resurface a pill the viewer may have hidden.
+      console.error("[marimo-glance] failed to read molab pill dismissals", error);
+      return true;
+    });
+    if (dismissed) return false;
+    if (!link.canImport) return true;
+    return link.canImport(notebook.sourceUrl).catch((error: unknown) => {
+      console.error("[marimo-glance] failed to check whether molab can import", error);
+      return false;
+    });
   }
 
   function showPill(notebook: LinkedNotebook): void {

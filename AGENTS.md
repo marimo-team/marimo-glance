@@ -102,7 +102,7 @@ interface NotebookLink {
 - `createLinkOut(link, { dismissals })` (in `extension-runtime`) is the controller; `molabUrl()` in `notebook-core` builds the link.
 - The pill's × discloses two scopes: hide this notebook, or hide on the whole site (the page's hostname). Dismissals go through a `DismissalStore` injected by the extension (`apps/extension/link-out-dismissals.ts`, on `storage.local`), keeping the runtime free of browser APIs. The store's `subscribe` relays `storage.onChanged`, so a dismissal in one tab, or the popup's "Show again", applies to open tabs without a reload.
 - In `apps/extension/entrypoints/content.ts` a site has a `host`, a `link`, or both (github.com has both). Self-hosted instances get a host only: molab cannot fetch from them.
-- Private notebooks are skipped where they can be detected: on github.com `canImport` sends a cookie-less `HEAD` for the repo, once per repo per page load (the page itself cannot say, since GitHub only renders its public-repo meta tag for signed-out viewers). Drive-backed Colab notebooks are skipped because they are private by default. A private GitHub repo opened through Colab cannot be told apart, so the pill still shows there.
+- Private notebooks are skipped where they can be detected: on github.com `canImport` sends a cookie-less `HEAD` for the repo, once per repo per page load and never for a notebook the viewer hid (the page itself cannot say, since GitHub only renders its public-repo meta tag for signed-out viewers). Drive-backed Colab notebooks are skipped because they are private by default. A private GitHub repo opened through Colab cannot be told apart, so the pill still shows there.
 
 ## Sites: built-in, opt-in, and self-hosted
 

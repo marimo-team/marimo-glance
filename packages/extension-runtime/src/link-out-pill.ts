@@ -38,7 +38,7 @@ export function mountLinkOutPill(options: LinkOutPillOptions): LinkOutPill {
   toggle.type = "button";
   toggle.className = className("link-out__toggle");
   toggle.textContent = "×";
-  toggle.setAttribute("aria-label", "Hide options");
+  toggle.setAttribute("aria-label", "Hide the molab button");
   toggle.setAttribute("aria-controls", MENU_ID);
   toggle.setAttribute("aria-expanded", "false");
 

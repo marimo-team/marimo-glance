@@ -233,6 +233,26 @@ test("a lookup superseded by navigation does not mount a stale pill", async () =
   linkOut.stop();
 });
 
+test("a lookup that lands after an unobserved navigation offers the notebook now shown", async () => {
+  const dom = installDom(NOTEBOOK_URL);
+  const dismissals = gatedDismissals();
+  const linkOut = createLinkOut(link, { dismissals });
+
+  const slow = linkOut.syncNow();
+  dom.window.history.pushState({}, "", "/o/r/blob/main/other.ipynb");
+  dismissals.release();
+  await settle();
+  assert.equal(pill(), null);
+  dismissals.release();
+  await slow;
+
+  assert.equal(
+    anchor().href,
+    "https://molab.marimo.io/https://github.com/o/r/blob/main/other.ipynb",
+  );
+  linkOut.stop();
+});
+
 test("a lookup in flight when stopped does not mount", async () => {
   installDom(NOTEBOOK_URL);
   const dismissals = gatedDismissals();
@@ -361,6 +381,27 @@ test("a failed import check hides the pill rather than guessing", async (t) => {
 
   assert.equal(pill(), null);
   assert.equal(logged.mock.callCount(), 1);
+  linkOut.stop();
+});
+
+test("a dismissed notebook is never checked for import", async () => {
+  installDom(NOTEBOOK_URL);
+  let checks = 0;
+  const linkOut = createLinkOut(
+    {
+      ...link,
+      canImport: async () => {
+        checks += 1;
+        return true;
+      },
+    },
+    { dismissals: memoryDismissals({ sites: ["github.com"] }) },
+  );
+
+  await linkOut.syncNow();
+
+  assert.equal(pill(), null);
+  assert.equal(checks, 0);
   linkOut.stop();
 });
 
